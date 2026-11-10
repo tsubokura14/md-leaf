@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { clickWhenHydrated } from "./hydration";
 import { interceptNavigation, waitForAppShell } from "./navigation";
 import { logIn } from "./session";
 import { allowedTestEmail } from "./test-env";
@@ -22,7 +23,7 @@ function sidebar(page: Page) {
 }
 
 async function openDrawer(page: Page) {
-  await page.getByRole("button", { name: "ノートの一覧を開く" }).click();
+  await clickWhenHydrated(page.getByRole("button", { name: "ノートの一覧を開く" }));
   await expect(drawer(page)).toBeVisible();
 }
 
@@ -102,7 +103,7 @@ test.describe("ノート", () => {
     await page.goto(GIT_NOTE);
     const tree = sidebar(page);
     const folder = tree.getByRole("button", { name: "読書メモ" });
-    await folder.click();
+    await clickWhenHydrated(folder);
     await expect(folder).toHaveAttribute("aria-expanded", "true");
     await expect(tree.getByRole("link", { name: "積読を減らす" })).toBeVisible();
     await folder.click();
@@ -117,7 +118,7 @@ test.describe("ノート", () => {
     await page.goto(GIT_NOTE);
     const tree = sidebar(page);
     const reading = tree.getByRole("button", { name: "読書メモ" });
-    await reading.click();
+    await clickWhenHydrated(reading);
     await expect(reading).toHaveAttribute("aria-expanded", "true");
     await tree.getByRole("button", { name: "日記" }).click();
     await tree.getByRole("link", { name: "今月の目標" }).click();
@@ -231,7 +232,9 @@ test.describe("ホーム（index.md がない）", () => {
   test("一覧のノートを押すと、そのノートへ移る", { tag: "@content-no-index" }, async ({ page }) => {
     await page.goto("/");
     const main = page.getByRole("main");
-    await main.getByRole("button", { name: "開発" }).click();
+    const folder = main.getByRole("button", { name: "開発" });
+    await clickWhenHydrated(folder);
+    await expect(folder).toHaveAttribute("aria-expanded", "true");
     await main.getByRole("link", { name: "リリースの手順" }).click();
     await expect(page.getByRole("heading", { level: 1, name: "リリースの手順" })).toBeVisible();
   });
@@ -357,7 +360,7 @@ test.describe("読み込み中・読み込めなかった", () => {
     await page.goto("/");
     const shell = waitForAppShell(page, (path) => path.startsWith("/notes/"));
     const tree = sidebar(page);
-    await tree.getByRole("button", { name: "開発" }).click();
+    await clickWhenHydrated(tree.getByRole("button", { name: "開発" }));
     await shell;
     await tree.getByRole("link", { name: "Git ブランチの運用メモ" }).click();
     await expect(skeleton(page)).toBeVisible();

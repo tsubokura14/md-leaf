@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { clickWhenHydrated } from "./hydration";
 import { logIn } from "./session";
 import { allowedTestEmail } from "./test-env";
 
@@ -158,7 +159,7 @@ test.describe("ログアウト", () => {
     await logIn(context, baseURL, allowedTestEmail);
     await page.goto("/");
     // スマホでは、ノートの一覧を ☰ で開く
-    await page.getByRole("button", { name: "ノートの一覧を開く" }).click();
+    await clickWhenHydrated(page.getByRole("button", { name: "ノートの一覧を開く" }));
     const tree = page.getByRole("dialog", { name: "ノートの一覧" });
     await expect(tree.getByText(allowedTestEmail)).toBeVisible();
 
