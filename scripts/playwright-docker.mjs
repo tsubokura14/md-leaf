@@ -42,10 +42,14 @@ const image = `mcr.microsoft.com/playwright:v${version}-noble`;
 const id = createHash("sha256").update(root).digest("hex").slice(0, 12);
 const work = "/work";
 
-// package-lock.json が前回と同じなら npm ci を飛ばす（毎回入れ直すと遅いため）
+// package-lock.json が前回と同じなら npm ci を飛ばす（毎回入れ直すと遅いため）。
+// .next のボリュームは前回のまま残るので、ページを消す・移したあとは、前回の型のファイル
+// （types/・e2e/*/types/。tsconfig.json の include で tsc が読む）が消えたページを指したまま残り、
+// next build が「Failed to type check」で止まる。型のファイルは next build が毎回作り直すので、撮る前に消す
 const inner = [
   "stamp=node_modules/.package-lock.stamp",
   'if ! cmp -s package-lock.json "$stamp"; then npm ci && cp package-lock.json "$stamp"; fi',
+  "rm -rf .next/types .next/dev/types .next/e2e/*/types .next/e2e/*/dev/types",
   'exec npx playwright test "$@"',
 ].join(" && ");
 
