@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "md-leaf",
+  title: { default: "md-leaf", template: "%s - md-leaf" },
   description: "Obsidian で書いた Markdown のノートを読むためのアプリ",
 };
 

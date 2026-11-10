@@ -11,6 +11,7 @@ AGENTS.md と CLAUDE.md はテンプレートのものなので、このプロ�
 
 - Next.js 16（App Router）＋ TypeScript 5.9 ＋ React 19。Node.js 24
 - 認証：Auth.js（`next-auth` 5.0.0-beta.32、Google ログイン、JWT のセッション）。ログインしているかの確かめは `src/proxy.ts`
+- Markdown の変換：unified（remark-parse・remark-gfm・remark-frontmatter・remark-rehype・rehype-stringify）、フロントマターは yaml（`src/lib/markdown.ts`）。ノートを読む場所は環境変数 `CONTENT_DIR`（既定 `content/`）
 - Tailwind CSS 4（Next.js のビルドに `@tailwindcss/turbopack` で組み込む）
 - テスト：Vitest ＋ Testing Library ＋ jsdom
   - `*.test.ts`・`*.test.mjs`（`src/`・`scripts/`・`.claude/hooks/`）は Node で、`src/` の `*.test.tsx` は jsdom で動く（`vitest.config.mts`）
@@ -34,7 +35,7 @@ AGENTS.md と CLAUDE.md はテンプレートのものなので、このプロ�
 | `npm run screenshots` | 画面の画像を撮り直す（Docker）。違うものとないものを `docs/specs/screens/` に書き出す。撮る画面を絞るときは `npm run screenshots -- <パス>` |
 | `npm run format` | コード（`.ts .tsx .js .mjs .cjs .jsx .css .json`）を Prettier でまとめて整形する。編集したファイルは、フック（`.claude/hooks/format-on-edit.mjs`）が自動で整形する |
 
-- 撮るときのサーバーのポートは環境変数 `PORT`（既定 3100）で変えられる
+- 撮るときのサーバーのポートは環境変数 `PORT`（既定 3100）で変えられる。テスト用のコンテンツフォルダごとにサーバーを立てるので、`PORT` から4つ（3100〜3103）を使う
 
 ## うまくいかなかったことから追加したルール
 

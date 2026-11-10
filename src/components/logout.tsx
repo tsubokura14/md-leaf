@@ -5,7 +5,7 @@ import { LogoutIcon } from "@/components/icons";
 
 /**
  * ログイン中のメールアドレスと「ログアウト」ボタン。確認は出さない（docs/ui.md の「部品の使い分け」）。
- * #3 で、ノートの一覧のいちばん下へ移す
+ * ノートの一覧のいちばん下に置く（src/app/(reader)/layout.tsx）
  */
 export async function Logout() {
   // auth() は中で乱数（CSRF の値）を作る。cookies()・headers() だけでは App Shell の事前の組み立て

@@ -48,3 +48,74 @@ export function LogoutIcon({ className }: IconProps) {
     </Svg>
   );
 }
+
+/** ☰。ノートの一覧を開く */
+export function MenuIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M4 6h16" />
+      <path d="M4 12h16" />
+      <path d="M4 18h16" />
+    </Svg>
+  );
+}
+
+/** ×。閉じる */
+export function CloseIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M6 6l12 12" />
+      <path d="M18 6 6 18" />
+    </Svg>
+  );
+}
+
+/** 家。ノートの一覧の「ホーム」 */
+export function HomeIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M4 10.5 12 4l8 6.5V20h-5v-6h-6v6H4Z" />
+    </Svg>
+  );
+}
+
+/** 右向きの矢印。フォルダの開閉（開いたら下へ回す） */
+export function ChevronIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="m9 6 6 6-6 6" />
+    </Svg>
+  );
+}
+
+/** フォルダ。ノートがまだないとき */
+export function FolderIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+    </Svg>
+  );
+}
+
+/** ×のついた紙。ノートが見つからないとき */
+export function NoteMissingIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+      <path d="M14 3v5h5" />
+      <path d="m10 12 4 4" />
+      <path d="m14 12-4 4" />
+    </Svg>
+  );
+}
+
+/** 丸に「!」。読み込めなかったときの帯 */
+export function AlertIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.5v5" />
+      <path d="M12 16.5h.01" />
+    </Svg>
+  );
+}

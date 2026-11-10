@@ -108,7 +108,12 @@ test.describe("ログインの画面", () => {
 });
 
 test.describe("ログインしているかでの移動", () => {
-  for (const path of ["/", "/notes/x", "/no-such-page"]) {
+  for (const path of [
+    "/",
+    "/notes/x",
+    `/notes/${encodeURIComponent("開発")}/${encodeURIComponent("Git ブランチの運用メモ")}`,
+    "/no-such-page",
+  ]) {
     test(`ログインしていなければ、${path} はログインの画面へ移り、本文を返さない`, async ({
       request,
     }) => {
@@ -145,16 +150,19 @@ test.describe("ログインしているかでの移動", () => {
 });
 
 test.describe("ログアウト", () => {
-  test("ログイン中はアドレスと「ログアウト」が出て、押すとログインの画面へ移り、そのあとホームもログインの画面へ移る", async ({
+  test("ログイン中はノートの一覧のいちばん下にアドレスと「ログアウト」が出て、押すとログインの画面へ移り、そのあとホームもログインの画面へ移る", async ({
     page,
     context,
     baseURL,
   }) => {
     await logIn(context, baseURL, allowedTestEmail);
     await page.goto("/");
-    await expect(page.getByText(allowedTestEmail)).toBeVisible();
+    // スマホでは、ノートの一覧を ☰ で開く
+    await page.getByRole("button", { name: "ノートの一覧を開く" }).click();
+    const tree = page.getByRole("dialog", { name: "ノートの一覧" });
+    await expect(tree.getByText(allowedTestEmail)).toBeVisible();
 
-    await page.getByRole("button", { name: "ログアウト" }).click();
+    await tree.getByRole("button", { name: "ログアウト" }).click();
     await expect(page).toHaveURL(new URL("/login", baseURL).href);
 
     await page.goto("/");
