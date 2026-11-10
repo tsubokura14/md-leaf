@@ -41,5 +41,12 @@
 
 ### 画面の状態は、テスト用のコンテンツフォルダで作る
 - 理由：ノートはビルドのときに HTML にするので、撮る状態（0件、ノートが多いなど）は、読み込むコンテンツフォルダを差し替えて作る
-- 前提（崩れたら見直す）：ノートを読む場所は環境変数 `CONTENT_DIR`（既定 `content/`）で変えられ、画面の画像は `e2e/fixtures/content/` で撮る（ノートの読み込みを作る #3 で入れる）
-- 当てはまる場所：`src/lib/` のノートの読み込み、`playwright.config.ts` のサーバーの起動
+- ログイン中の状態は、テストの側で作る。`e2e/session.ts` の `logIn` が、テストのときだけの `AUTH_SECRET`（`e2e/test-env.ts`。`playwright.config.ts` がサーバーにも渡す）で、Auth.js と同じセッションの Cookie を作る。理由：アプリにログインを飛ばす入口（テスト用のログインなど）を作ると、設定を間違えたときに本番で誰でも入れる抜け道になる
+- 前提（崩れたら見直す）：ノートを読む場所は環境変数 `CONTENT_DIR`（既定 `content/`）で変えられ、画面の画像は `e2e/fixtures/content/` で撮る（ノートの読み込みを作る #3 で入れる）。セッションは Auth.js の JWT の Cookie（`authjs.session-token`。Cookie の名前を salt に使う）。データベースのセッションに変えたり、Auth.js の版で Cookie の作り方が変わったら、`e2e/session.ts` を直す
+- 当てはまる場所：`src/lib/` のノートの読み込み、`playwright.config.ts` のサーバーの起動、`e2e/session.ts`・`e2e/test-env.ts`
+
+### ログインしていなければ、ログインの画面以外を出さない
+- 理由：ノートはビルドのときに HTML にするので、ページの中では止められない場合がある。まだない URL も含めて、どのページより前に `src/proxy.ts` で止める
+- 「ログインしている」は、セッションがあり、そのアドレスが今の `ALLOWED_EMAILS` に入っていること。開くたびに比べるので、許可するアドレスから外して再デプロイすれば、ログイン中の人も締め出せる。移す先は `src/lib/access.ts` が決める（ログインしていなければ `/login?callbackUrl=<開こうとした URL>`、ログイン中に `/login` を開けば `/`）
+- 前提（崩れたら見直す）：`src/proxy.ts` の `matcher` から外した場所（`/api/auth/`、`/_next/static/`、`/_next/image`、`/favicon.ico`）は守られない。ノートの画像などを足すときも、`matcher` から外さない。ページの中に、ログインを飛ばす入口を作らない
+- 当てはまる場所：`src/proxy.ts`、`src/lib/access.ts`、`src/app/` のすべてのページ

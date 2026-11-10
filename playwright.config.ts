@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { testServerEnv } from "./e2e/test-env";
 
 // worktree などでフォルダを分けて並べて撮るとき、ポートをぶつけないために変えられるようにする
 const port = Number(process.env.PORT ?? 3100);
@@ -29,6 +30,8 @@ export default defineConfig({
     command: `npx next build && npx next start -p ${port}`,
     url: `http://localhost:${port}`,
     reuseExistingServer: false,
+    // テストのときだけの値（e2e/test-env.ts）
+    env: testServerEnv,
     timeout: 300_000,
   },
 });

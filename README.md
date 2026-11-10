@@ -8,11 +8,11 @@
 
 PC の Obsidian で書いた Markdown のノートを、スマホでも読みやすく見られるようにする、自分専用の閲覧アプリ。ノートはこのリポジトリに置き、狭い画面でも読みやすく表示する。
 
-本番（Vercel）には、まだデプロイしていない。
+本番は Vercel で動かす。デプロイの手順は「[本番（Vercel）へのデプロイ](#本番vercelへのデプロイ)」にある。
 
 ## 主な機能
 
-ここに書くのは作る予定の機能で、今は開発を始めるための土台だけがある。
+ここに書くのは作る予定の機能も含む。今できるのは、ログインとログアウトだけ。
 
 - Google アカウントでログインできる（許可したメールアドレスだけ）
 - フォルダのツリーからノートを選べる（日本語のファイル名・フォルダ名も、URL にそのまま使う）
@@ -56,8 +56,59 @@ http://localhost:3000 で開く。
 
 ### 環境変数
 
-今は、要る環境変数はない。
-ログイン（#2）を作るときに、Google ログインと許可するメールアドレスのための環境変数を足し、その名前をここと `.env.example` に書く。値はリポジトリに書かない。
+ログインに、次の環境変数を使う。値はリポジトリに書かない（コード・文書・コミットのどこにも書かない）。
+
+| 名前 | 内容 |
+| --- | --- |
+| `AUTH_SECRET` | ログインの Cookie を暗号化する秘密の値。`npx auth secret` などで作る |
+| `AUTH_GOOGLE_ID` | Google Cloud で作った OAuth のクライアントの ID |
+| `AUTH_GOOGLE_SECRET` | 同じクライアントの秘密の値 |
+| `ALLOWED_EMAILS` | ログインを許可するメールアドレス。カンマ区切りで、大文字・小文字は区別しない。空ならだれもログインできない |
+
+手元では、`.env.example` を `.env.local` にコピーして値を入れる（`.env.local` はコミットしない）。手元でログインするには、下の「Google のログインの設定」で、リダイレクト URI に `http://localhost:3000/api/auth/callback/google` を登録しておく。
+
+## 本番（Vercel）へのデプロイ
+
+人間が一度だけ行う。ログインできるのは本番の URL と手元（localhost）だけで、Vercel のプレビュー（PR ごとの URL）はログインの画面までしか見られない。
+
+### 1. Vercel のプロジェクトを作る
+
+1. Vercel にログインし、このリポジトリを読み込んで、プロジェクトを作る（プランは Hobby）
+2. 本番の URL（例：`https://<プロジェクト名>.vercel.app`）を確かめる。次の Google の設定で使う
+
+### 2. Google のログインの設定
+
+1. Google Cloud のコンソールでプロジェクトを作る（または選ぶ）
+2. 「API とサービス」の「OAuth 同意画面」を設定する（ユーザーの種類は「外部」。テスト中のままなら、ログインに使う Google アカウントを「テストユーザー」に足す）
+3. 「認証情報」で「OAuth クライアント ID」を作る。アプリケーションの種類は「ウェブ アプリケーション」
+4. 「承認済みのリダイレクト URI」に、次の2つを登録する
+   - `https://<本番のドメイン>/api/auth/callback/google`
+   - `http://localhost:3000/api/auth/callback/google`
+5. できたクライアントの ID と秘密の値を控える（`AUTH_GOOGLE_ID`・`AUTH_GOOGLE_SECRET` に使う）
+
+プレビューの URL は登録しない。登録しないことで、プレビューではログインできないようにしている。
+
+### 3. Vercel の環境変数の設定
+
+Vercel のプロジェクトの「Settings」→「Environment Variables」で、次のように設定する。
+
+| 名前 | 置く環境 |
+| --- | --- |
+| `AUTH_SECRET` | Production と Preview |
+| `AUTH_GOOGLE_ID` | Production と Preview |
+| `AUTH_GOOGLE_SECRET` | Production と Preview |
+| `ALLOWED_EMAILS` | Production だけ |
+
+- `AUTH_SECRET`・`AUTH_GOOGLE_ID`・`AUTH_GOOGLE_SECRET` を Preview にも置くのは、プレビューでもログインの画面が出るようにするため
+- `ALLOWED_EMAILS` は Production にだけ置く。Preview に置かないので、プレビューではだれもログインできない
+- 許可するアドレスを足すときは、`ALLOWED_EMAILS` を変えて再デプロイする。外したアドレスは、次に開いたときに締め出される
+
+### 4. デプロイして確かめる
+
+1. 環境変数を設定したら、Vercel で本番を再デプロイする（以後は main に入るたびに本番へ反映される）
+2. 本番の URL を開き、許可したアカウントでログインできること、許可していないアカウントでは入れないことを確かめる
+3. 手元（`npm run dev`）でもログインできることを確かめる
+4. PR のプレビューの URL では、ログインの画面までしか見られないことを確かめる
 
 ## 開発コマンド
 

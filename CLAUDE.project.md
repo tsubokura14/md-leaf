@@ -10,6 +10,7 @@ AGENTS.md と CLAUDE.md はテンプレートのものなので、このプロ�
 <!-- 立ち上げで決めたら書く。詳しくは docs/overview.md -->
 
 - Next.js 16（App Router）＋ TypeScript 5.9 ＋ React 19。Node.js 24
+- 認証：Auth.js（`next-auth` 5.0.0-beta.32、Google ログイン、JWT のセッション）。ログインしているかの確かめは `src/proxy.ts`
 - Tailwind CSS 4（Next.js のビルドに `@tailwindcss/turbopack` で組み込む）
 - テスト：Vitest ＋ Testing Library ＋ jsdom
   - `*.test.ts`・`*.test.mjs`（`src/`・`scripts/`・`.claude/hooks/`）は Node で、`src/` の `*.test.tsx` は jsdom で動く（`vitest.config.mts`）
