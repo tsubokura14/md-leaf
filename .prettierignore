@@ -1,0 +1,12 @@
+# 整形するのは、コード（.ts .tsx .js .mjs .cjs .jsx .css .json）だけ。npm run format もその拡張子に絞ってある
+# .gitignore にあるもの（node_modules、.next など）は、Prettier が自動で外す
+package-lock.json
+docs/
+
+# テンプレートのもの（docs/template-files.md）。テンプレートとの差分が整形で増えないように外す
+.claude/agents/
+.claude/skills/
+.claude/hooks/guard.mjs
+.claude/settings.json
+.githooks/
+.github/ISSUE_TEMPLATE/

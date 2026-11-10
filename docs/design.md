@@ -7,12 +7,39 @@
 
 ## 全体の構成
 
-<!-- フォルダ構成、層の分け方、どの層に何を書くかと、その理由・前提。立ち上げ（foundation スキル）で書く -->
+| 場所 | 置くもの |
+| --- | --- |
+| `src/app/` | 画面（App Router のページとレイアウト）。データの読み込みと組み立ては `src/lib/` を呼ぶだけにする |
+| `src/components/` | 画面の部品（複数の画面で使うもの） |
+| `src/lib/` | 画面に関係しない処理（ノートの読み込み、Markdown から HTML への変換など）。React に依存しない |
+| `src/styles/tokens.css` | トークンファイル。色・文字・余白などの値はここにだけ書く |
+| `src/app/globals.css` | Tailwind とトークンの読み込みだけ。値は書かない |
+| `content/` | ノート。この中の構成がそのままノートの一覧になる |
+| `*.test.ts(x)`・`*.test.mjs` | 単体・部品のテスト（Vitest）。テストするファイルの隣に置く（`src/`・`scripts/`・`.claude/hooks/`）。`src/` の `.tsx` は jsdom、それ以外は Node で動く |
+| `e2e/` | 画面を動かすテストと、画面の画像を比べるテスト（Playwright） |
+| `scripts/` | 開発用のスクリプト（画像を撮る Docker の起動、トークンにない値の検査） |
+| `.claude/hooks/format-on-edit.mjs` | AI が編集したファイルだけを整形するフック |
+
+- 理由：ノートの変換（`src/lib/`）は条件の分かれ道が多く、テストを書く中心になる。React から切り離しておくと、画面を通さずにテストできる
+- 前提（崩れたら見直す）：ノートはビルドのときに HTML にする（`docs/overview.md`）。実行のたびに読む作りに変えたら、層の分け方を見直す
 
 ## データ
 
-<!-- 保存するものの持ち方（テーブルなど）と、その理由・前提 -->
+- 保存するデータはない（データベースを使わない）。ノートはリポジトリの `content/` に置く
 
 ## どこでも守る決まり
 
-<!-- 複数のファイルで守る決まり。命名、エラーの扱い、コードの書き方を縛るライブラリの注意など -->
+### トークンにない値を書かない
+- 理由：見た目の値を `src/styles/tokens.css` の1か所にまとめ、ライト・ダークを同じトークン名で切り替えるため（`docs/ui.md` の「トークン」）
+- 前提（崩れたら見直す）：Tailwind の既定の値を `--*: initial` で消してある。これを外すと、トークンにないクラスも CSS が作られる
+- 当てはまる場所：`src/` のすべての TSX（`npm run lint` の ESLint が、トークンにないクラス、`[` を使う任意の値、色コード・`px` のリテラルを見つける）と、トークンファイル以外の `.css`（`scripts/check-tokens.mjs` が色コード・`rgb()`・`px` を見つける）
+
+### 画面の画像は、Playwright 公式の Docker イメージで撮って比べる
+- 理由：OS が違うと文字の描き方が変わり、画像が一致しないため。手元（`scripts/playwright-docker.mjs`）と CI（`.github/workflows/ci.yml` の `visual`）で同じイメージを使う
+- 前提（崩れたら見直す）：イメージのタグは `@playwright/test` の版と同じにする。`scripts/playwright-docker.mjs` は版から自動で決めるが、`.github/workflows/ci.yml` には直接書いてあるので、Playwright を上げたら両方を合わせる
+- 当てはまる場所：`package.json` の `@playwright/test`、`.github/workflows/ci.yml` の `container:`
+
+### 画面の状態は、テスト用のコンテンツフォルダで作る
+- 理由：ノートはビルドのときに HTML にするので、撮る状態（0件、ノートが多いなど）は、読み込むコンテンツフォルダを差し替えて作る
+- 前提（崩れたら見直す）：ノートを読む場所は環境変数 `CONTENT_DIR`（既定 `content/`）で変えられ、画面の画像は `e2e/fixtures/content/` で撮る（ノートの読み込みを作る #3 で入れる）
+- 当てはまる場所：`src/lib/` のノートの読み込み、`playwright.config.ts` のサーバーの起動

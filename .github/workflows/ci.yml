@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+# 同じ PR に続けて push したら、古い実行は止める
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: テスト・Lint・型チェック
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          # 手元と同じ Node のメジャー版
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint
+      - run: npm run typecheck
+
+  visual:
+    name: 画像を比べるテスト
+    runs-on: ubuntu-latest
+    # docs/design.md の「画面の画像は、Playwright 公式の Docker イメージで撮って比べる」
+    # --user 1001 は Playwright 公式の CI の例のとおり。checkout したファイルの持ち主と合わせ、
+    # git の safe.directory や HOME の問題を避ける
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
+      options: --user 1001
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm ci
+      # CI 環境変数があるので、scripts/playwright-docker.mjs は Docker を使わずにそのまま走る。
+      # CI では基準の画像を更新しない（--update-snapshots=none。撮り直しは手元で行い、PR に入れる）
+      - run: npm run test:visual
+      # 基準・今回・差分の画像は HTML レポートに入る
+      - name: 失敗したときのレポートを残す
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14

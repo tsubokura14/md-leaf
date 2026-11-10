@@ -1,10 +1,10 @@
 ---
-# テストのファイルの置き場所。技術を決めたら（立ち上げ）、その置き場所に合わせて直す
+# テストのファイルの置き場所（vitest.config.mts と playwright.config.ts に合わせる）
 paths:
-  - "**/*.test.*"
-  - "**/*.spec.*"
-  - "**/tests/**"
-  - "**/e2e/**"
+  - "src/**/*.test.*"
+  - "scripts/**/*.test.*"
+  - ".claude/hooks/**/*.test.*"
+  - "e2e/**"
 ---
 
 テストを書く・直す前に、testing スキルを使う。

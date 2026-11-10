@@ -11,6 +11,15 @@ dist/
 build/
 coverage/
 
+# Next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+.vercel
+*.pem
+npm-debug.log*
+
 # OS・エディタ
 .DS_Store
 Thumbs.db
@@ -20,3 +29,7 @@ Thumbs.db
 
 # Claude Code の個人設定
 .claude/settings.local.json
+
+# Playwright
+playwright-report/
+test-results/
