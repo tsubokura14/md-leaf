@@ -1,4 +1,5 @@
 import "./note-body.css";
+import { NoteBodyContent } from "./note-body-content";
 
 type NoteBodyProps = {
   title: string;
@@ -17,7 +18,7 @@ export function NoteBody({ title, html }: NoteBodyProps) {
     >
       <article className="reading mx-auto max-w-prose font-body">
         <h1 className="text-2xl leading-tight font-bold">{title}</h1>
-        <div className="note-body mt-6" dangerouslySetInnerHTML={{ __html: html }} />
+        <NoteBodyContent html={html} />
       </article>
     </div>
   );

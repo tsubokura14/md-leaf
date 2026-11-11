@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { clickWhenHydrated } from "./hydration";
+import { clickWhenHydrated, waitForHydration } from "./hydration";
 import { interceptNavigation, waitForAppShell } from "./navigation";
 import { logIn } from "./session";
 import { allowedTestEmail } from "./test-env";
@@ -132,6 +132,77 @@ test.describe("ノート", () => {
       "aria-expanded",
       "false",
     );
+  });
+});
+
+test.describe("本文のノートへのリンク", () => {
+  // 本文（ノートの題と本文の article）の中のリンク。一覧にも同じ名前のリンクがあるので、本文に絞る
+  function bodyLink(page: Page, name: string) {
+    return page.getByRole("article").getByRole("link", { name });
+  }
+
+  // ページを読み込み直すと消える印を置く。移ったあとに残っていれば、読み込み直さずに移った
+  async function markPage(page: Page) {
+    await page.evaluate(() => {
+      (window as unknown as { __notReloaded?: boolean }).__notReloaded = true;
+    });
+  }
+
+  function notReloaded(page: Page) {
+    return page.evaluate(
+      () => (window as unknown as { __notReloaded?: boolean }).__notReloaded === true,
+    );
+  }
+
+  // 本文のリンクは React の部品が受けるので、つながる前に押すと、ふつうのページの移動になる
+  async function waitForBody(page: Page) {
+    await waitForHydration(page.locator(".note-body"));
+  }
+
+  test("PC：ノートからノートへ、読み込み直さずに移り、場所・一覧の強調・ページの題が変わる", async ({
+    page,
+  }) => {
+    await page.setViewportSize(PC);
+    await page.goto(GIT_NOTE);
+    await waitForBody(page);
+    await markPage(page);
+    await bodyLink(page, "リリースの手順").click();
+    await expect(page).toHaveURL(encodeURI("/notes/開発/リリースの手順"));
+    await expect(page.getByRole("heading", { level: 1, name: "リリースの手順" })).toBeVisible();
+    await expect(place(page)).toHaveText("開発 / リリースの手順");
+    await expect(page).toHaveTitle("リリースの手順 - md-leaf");
+    await expect(sidebar(page).getByRole("link", { name: "リリースの手順" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(await notReloaded(page)).toBe(true);
+  });
+
+  test("ホームからノートへ移り、「戻る」でホームへ戻る", async ({ page }) => {
+    await page.goto("/");
+    await waitForBody(page);
+    await markPage(page);
+    await bodyLink(page, "Docker のメモ").click();
+    await expect(page.getByRole("heading", { level: 1, name: "Docker のメモ" })).toBeVisible();
+    await expect(place(page)).toHaveText("開発 / Docker のメモ");
+    await page.goBack();
+    await expect(page).toHaveURL("/");
+    await expect(page.getByRole("heading", { level: 1, name: "ノートの入り口" })).toBeVisible();
+    await expect(place(page)).toHaveText("ホーム");
+    expect(await notReloaded(page)).toBe(true);
+  });
+
+  test("リンク先がないと「ノートが見つかりません」を出し、「ホームへ戻る」でホームへ移る", async ({
+    page,
+  }) => {
+    await page.goto("/notes/日記/2026-11");
+    await waitForBody(page);
+    await bodyLink(page, "古い名前").click();
+    await expect(page.getByRole("heading", { name: "ノートが見つかりません" })).toBeVisible();
+    await expect(place(page)).toHaveText("");
+    await page.getByRole("link", { name: "ホームへ戻る" }).click();
+    await expect(page).toHaveURL("/");
+    await expect(page.getByRole("heading", { level: 1, name: "ノートの入り口" })).toBeVisible();
   });
 });
 

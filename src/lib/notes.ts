@@ -147,20 +147,38 @@ function decodeSegment(segment: string): string {
 // 「..」などでコンテンツフォルダの外を読ませないため
 export async function readNote(segments: string[], dir = contentDir()): Promise<Note | undefined> {
   const path = segments.map(decodeSegment).join("/");
-  const { root } = await scan(dir);
-  const found = flatten(root).find((note) => note.path === path);
+  const { root, homeFile } = await scan(dir);
+  const notes = flatten(root);
+  const found = notes.find((note) => note.path === path);
   if (!found) return undefined;
-  return toNote(found.path, found.file);
+  return toNote(found.path, found.file, notePathsOf(notes, homeFile));
 }
 
 export async function readHome(dir = contentDir()): Promise<Note | undefined> {
-  const { homeFile } = await scan(dir);
+  const { root, homeFile } = await scan(dir);
   if (!homeFile) return undefined;
-  return toNote(stripExtension(HOME_FILE), homeFile);
+  return toNote(stripExtension(HOME_FILE), homeFile, notePathsOf(flatten(root), homeFile));
 }
 
-async function toNote(path: string, file: string): Promise<Note> {
-  const { title, html } = renderMarkdown(await readFile(file, "utf8"));
+function notePathsOf(notes: ScannedNote[], homeFile: string | undefined): Set<string> {
+  const paths = new Set(notes.map((note) => note.path));
+  if (homeFile) paths.add(stripExtension(HOME_FILE));
+  return paths;
+}
+
+// 切れたリンクの警告は、ノートを変換するここで出す。ビルドのときに全部のノートを変換するので、
+// ここなら漏れなく見つかる（"use cache" で同じノートは1回だけ変換されるので、警告も重ならない）。
+// ビルドは止めない（1つのリンク切れで、ほかのノートの更新まで出せなくならないように）
+async function toNote(path: string, file: string, notePaths: ReadonlySet<string>): Promise<Note> {
+  const { title, html, brokenLinks } = renderMarkdown(await readFile(file, "utf8"), {
+    fromPath: path,
+    notePaths,
+  });
+  if (brokenLinks.length > 0) {
+    console.warn(
+      `リンク先のノートがありません: ${path}${NOTE_EXTENSION} → ${brokenLinks.join(", ")}`,
+    );
+  }
   const fileName = path.split("/").at(-1) ?? path;
   return { path, title: title ?? fileName, html };
 }

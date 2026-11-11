@@ -217,3 +217,61 @@ describe("readHome", () => {
     expect(await readHome(dir)).toBeUndefined();
   });
 });
+
+describe("ノートの中のリンク", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  test("ほかのノートと、ホームへのリンクを、ノートの URL に書き換える", async () => {
+    await put({
+      "index.md": "[メモ](<開発/Docker のメモ.md>)",
+      "開発/Docker のメモ.md": "[ホーム](../index.md)",
+    });
+
+    const home = await readHome(dir);
+    const note = await readNote(["開発", "Docker のメモ"], dir);
+
+    expect(home?.html).toContain(
+      `href="/notes/${encodeURIComponent("開発")}/${encodeURIComponent("Docker のメモ")}" data-note-link=""`,
+    );
+    expect(note?.html).toContain('href="/" data-note-link=""');
+  });
+
+  test("リンク先がないリンクがあれば、リンクを書いたノートとリンク先を警告に出す", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await put({
+      "index.md": "[古い](<開発/古い名前.md>)",
+      "開発/a.md": "[外](../../x.md) [ある](b.md)",
+      "開発/b.md": "本文",
+    });
+
+    await readHome(dir);
+    await readNote(["開発", "a"], dir);
+
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn.mock.calls[0]?.join(" ")).toContain("index.md");
+    expect(warn.mock.calls[0]?.join(" ")).toContain("開発/古い名前.md");
+    expect(warn.mock.calls[1]?.join(" ")).toContain("開発/a.md");
+    expect(warn.mock.calls[1]?.join(" ")).toContain("../../x.md");
+    expect(warn.mock.calls[1]?.join(" ")).not.toContain("b.md");
+  });
+
+  test("リンク先がないリンクがなければ、警告を出さない", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await put({ "開発/a.md": "[ある](b.md)", "開発/b.md": "本文" });
+
+    await readNote(["開発", "a"], dir);
+
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  test("一番上の index.md があれば、そこへのリンクは切れたリンクとして警告しない", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await put({ "index.md": "入り口", "開発/a.md": "[ホーム](../index.md)" });
+
+    await readNote(["開発", "a"], dir);
+
+    expect(warn).not.toHaveBeenCalled();
+  });
+});

@@ -4,14 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useState } from "react";
 import { ChevronIcon, HomeIcon } from "@/components/icons";
+import { NOTE_PREFIX, noteHref } from "@/lib/note-url";
 import type { NoteTree as NoteTreeData, NoteTreeEntry, NoteTreeFolder } from "@/lib/notes";
 
 // 今のページ（場所・一覧の強調・開いておくフォルダ）は、ページから渡さず、一覧の木と usePathname から決める。
 // レイアウトはページを移っても作り直されないので、今のページはクライアントで知るしかない。
 // 木にない URL（見つからないノート）は、場所を空にし、何も強調しない。
 // usePathname は、ビルドのときに分からない URL では止まるので、使う部品は Suspense に入れる
-
-const NOTE_PREFIX = "/notes/";
 
 function decodeSegment(segment: string): string {
   try {
@@ -47,10 +46,6 @@ export function usePlace(tree: NoteTreeData): string[] {
   if (!current) return [];
   if (current.home) return ["ホーム"];
   return current.trail.map((entry) => entry.name);
-}
-
-function noteHref(path: string): string {
-  return `${NOTE_PREFIX}${path.split("/").map(encodeURIComponent).join("/")}`;
 }
 
 const rowClass = `

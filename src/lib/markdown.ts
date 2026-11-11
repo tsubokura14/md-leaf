@@ -6,13 +6,23 @@ import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
-import type { VFile } from "vfile";
+import { VFile } from "vfile";
 import { parse as parseYaml } from "yaml";
+import { resolveNoteLink } from "./note-links";
 
 export type RenderedMarkdown = {
   /** フロントマターの `title`。ないときは undefined（ファイル名を使うかは呼ぶ側が決める） */
   title: string | undefined;
   html: string;
+  /** リンク先のノートがないリンク（書かれたままの形）。links を渡さなければいつも空 */
+  brokenLinks: string[];
+};
+
+export type NoteLinkContext = {
+  /** リンクを書いたノートのパス（コンテンツフォルダから、.md を除く） */
+  fromPath: string;
+  /** 一覧にある全部のノートのパス（ホームの index を含む） */
+  notePaths: ReadonlySet<string>;
 };
 
 // フロントマター（先頭の yaml）を本文から外し、title を file.data に置く
@@ -78,6 +88,43 @@ function externalLinksInNewTab() {
   };
 }
 
+function decodeForDisplay(href: string): string {
+  try {
+    return decodeURI(href);
+  } catch {
+    return href;
+  }
+}
+
+// .md の相対リンクを、ノートの URL に書き換える（リンク先の決め方は note-links.ts）。
+// links は呼ぶたびに違うので、processor を作り直さずに file.data で渡す
+function noteLinks() {
+  return (tree: HastRoot, file: VFile) => {
+    const links = file.data.links as NoteLinkContext | undefined;
+    const broken: string[] = [];
+    file.data.brokenLinks = broken;
+    if (!links) return;
+    const walk = (node: HastRoot | Element) => {
+      for (const child of node.children) {
+        if (child.type !== "element") continue;
+        const href = child.properties.href;
+        if (child.tagName === "a" && typeof href === "string") {
+          const resolved = resolveNoteLink(href, links.fromPath);
+          if (resolved) {
+            child.properties.href = resolved.href;
+            child.properties.dataNoteLink = "";
+            if (resolved.path === undefined || !links.notePaths.has(resolved.path)) {
+              broken.push(decodeForDisplay(href));
+            }
+          }
+        }
+        walk(child);
+      }
+    };
+    walk(tree);
+  };
+}
+
 const processor = unified()
   .use(remarkParse)
   .use(remarkFrontmatter, ["yaml"])
@@ -85,13 +132,16 @@ const processor = unified()
   .use(remarkGfm)
   .use(remarkRehype, { handlers: { html: htmlAsText } })
   .use(externalLinksInNewTab)
+  .use(noteLinks)
   .use(rehypeStringify);
 
-export function renderMarkdown(source: string): RenderedMarkdown {
-  const file = processor.processSync(source);
+/** links がなければ、リンクを書き換えない（一覧の名前を読むときは要らないため） */
+export function renderMarkdown(source: string, links?: NoteLinkContext): RenderedMarkdown {
+  const file = processor.processSync(new VFile({ value: source, data: { links } }));
   const title = file.data.title;
   return {
     title: typeof title === "string" ? title : undefined,
     html: String(file),
+    brokenLinks: (file.data.brokenLinks as string[] | undefined) ?? [],
   };
 }
