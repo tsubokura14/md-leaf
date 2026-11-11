@@ -12,6 +12,7 @@ export default auth((req) => {
 });
 
 export const config = {
-  // Auth.js の入口（Google から戻る先など）と、Next.js の静的ファイルだけを通す
+  // Auth.js の入口（Google から戻る先など）と、Next.js の静的ファイルだけを通す。
+  // ノートの画像（/files/）は外さない（docs/design.md の「画像を返す入口は、コンテンツフォルダの中の画像だけを返す」）
   matcher: ["/((?!api/auth/|_next/static/|_next/image|favicon\\.ico$).*)"],
 };

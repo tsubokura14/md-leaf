@@ -22,6 +22,12 @@ function sidebar(page: Page) {
   return page.getByRole("complementary", { name: "ノートの一覧" });
 }
 
+// 本文の Mermaid の図。ブラウザで描くので、撮る前にこれで描き終わるのを待つ（描き終わるまでは元のコードが出ている）
+async function waitForDiagram(page: Page) {
+  await expect(page.locator(".note-body .mermaid-figure svg")).toBeVisible();
+  await expect(page.locator(".note-body pre[data-mermaid]")).toHaveCount(0);
+}
+
 async function openDrawer(page: Page) {
   await clickWhenHydrated(page.getByRole("button", { name: "ノートの一覧を開く" }));
   await expect(drawer(page)).toBeVisible();
@@ -70,6 +76,7 @@ test.describe("ノート", () => {
     await expect(page.getByRole("heading", { level: 2, name: "流れ" })).toBeVisible();
     await expect(place(page)).toHaveText("開発 / Git ブランチの運用メモ");
     await expect(page).toHaveTitle("Git ブランチの運用メモ - md-leaf");
+    await waitForDiagram(page);
     await expect(page).toHaveScreenshot("note-default.png", { fullPage: true });
   });
 
@@ -95,7 +102,83 @@ test.describe("ノート", () => {
       "page",
     );
     await expect(tree.getByRole("button", { name: "ログアウト" })).toBeVisible();
+    await waitForDiagram(page);
     await expect(page).toHaveScreenshot("note-default-pc.png", { fullPage: true });
+  });
+
+  test("狭い画面でも、長いコード・表・数式・図は枠の中で横にスクロールし、ページは横にスクロールしない", async ({
+    page,
+  }) => {
+    // 見本のノートの長い行（git branch -d "12-due-date-input"）が、撮る環境の等幅の字で収まらない幅
+    await page.setViewportSize({ width: 240, height: 800 });
+    await page.goto(GIT_NOTE);
+    const body = page.locator(".note-body");
+    await expect(body.locator(".table-scroll")).toHaveCSS("overflow-x", "auto");
+    await expect(body.locator(".katex-display")).toHaveCSS("overflow-x", "auto");
+    await waitForDiagram(page);
+    // 見本の流れ図は、この幅に収まらない大きさで描かれる（縮めて描かない）
+    const diagram = body.locator(".mermaid-figure");
+    await expect(diagram).toHaveCSS("overflow-x", "auto");
+    expect(await diagram.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+    const code = body.locator("pre", { hasText: "git branch -d" });
+    await expect(code).toHaveCSS("overflow-x", "auto");
+    expect(await code.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+  });
+
+  test("mermaid のコードは、ブラウザで図（SVG）に描かれる", async ({ page }) => {
+    await page.goto(GIT_NOTE);
+    const diagram = page.locator(".note-body .mermaid-figure svg");
+    await expect(diagram).toBeVisible();
+    await expect(diagram.getByText("ブランチ", { exact: true })).toBeVisible();
+  });
+
+  test("折りたたみのコールアウトは閉じていて、見出しを押すと開き、もう一度押すと閉じる", async ({
+    page,
+  }) => {
+    await page.goto(GIT_NOTE);
+    const title = page.locator(".note-body summary", {
+      hasText: "消してしまったブランチを戻すには",
+    });
+    const content = page.locator(".note-body").getByText("で消す前のコミットを探し");
+    await expect(title).toBeVisible();
+    await expect(content).toBeHidden();
+    await title.click();
+    await expect(content).toBeVisible();
+    await title.click();
+    await expect(content).toBeHidden();
+  });
+
+  test("ノートと同じフォルダの画像が、本文の幅に収まって出て、下に代わりの文字が出る", async ({
+    page,
+  }) => {
+    await page.goto(GIT_NOTE);
+    const body = page.locator(".note-body");
+    const figure = body.locator("figure", { has: page.getByRole("img", { name: "ブランチの図" }) });
+    const image = figure.getByRole("img");
+    await expect(image).toBeVisible();
+    await expect(figure.locator("figcaption")).toHaveText("ブランチの図");
+    // 読み込めた画像だけ naturalWidth が 0 より大きくなる
+    await expect
+      .poll(() => image.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0))
+      .toBe(true);
+    const imageBox = await image.boundingBox();
+    const bodyBox = await body.boundingBox();
+    expect(imageBox && bodyBox && imageBox.width <= bodyBox.width).toBe(true);
+  });
+
+  test("ログインしていなければ、画像の URL を直接開いてもログインの画面へ移る", async ({
+    page,
+    context,
+  }) => {
+    await context.clearCookies();
+    await page.goto("/files/開発/branch-graph.png");
+    await expect(page).toHaveURL(/\/login\?/);
+    expect(new URL(page.url()).searchParams.get("callbackUrl")).toMatch(
+      /^\/files\/.+\/branch-graph\.png$/,
+    );
   });
 
   test("PC：フォルダを押すと開閉する", async ({ page }) => {
@@ -220,6 +303,7 @@ test.describe("ノートの一覧（スマホ）", () => {
     );
     await expect(tree.getByText(allowedTestEmail)).toBeVisible();
     await expect(tree.getByRole("button", { name: "ログアウト" })).toBeVisible();
+    await waitForDiagram(page);
     await expect(page).toHaveScreenshot("note-tree.png");
   });
 
@@ -267,6 +351,7 @@ test.describe("ノートの一覧（スマホ）", () => {
     await page.goto(GIT_NOTE);
     await openDrawer(page);
     await expect(drawer(page).getByRole("button", { name: "ログアウト" })).toBeVisible();
+    await waitForDiagram(page);
     await expect(page).toHaveScreenshot("note-tree-many.png");
   });
 });

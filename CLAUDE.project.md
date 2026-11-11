@@ -11,7 +11,7 @@ AGENTS.md と CLAUDE.md はテンプレートのものなので、このプロ�
 
 - Next.js 16（App Router）＋ TypeScript 5.9 ＋ React 19。Node.js 24
 - 認証：Auth.js（`next-auth` 5.0.0-beta.32、Google ログイン、JWT のセッション）。ログインしているかの確かめは `src/proxy.ts`
-- Markdown の変換：unified（remark-parse・remark-gfm・remark-frontmatter・remark-rehype・rehype-stringify）、フロントマターは yaml（`src/lib/markdown.ts`）。ノートを読む場所は環境変数 `CONTENT_DIR`（既定 `content/`）
+- Markdown の変換：unified（remark-parse・remark-gfm・remark-frontmatter・remark-math・remark-rehype・rehype-stringify）、フロントマターは yaml、コードの色分けは highlight.js、数式は KaTeX（`src/lib/markdown.ts`）。Mermaid の図はブラウザで mermaid が描く（`src/components/mermaid.ts`）。ノートを読む場所は環境変数 `CONTENT_DIR`（既定 `content/`）
 - Tailwind CSS 4（Next.js のビルドに `@tailwindcss/turbopack` で組み込む）
 - テスト：Vitest ＋ Testing Library ＋ jsdom
   - `*.test.ts`・`*.test.mjs`（`src/`・`scripts/`・`.claude/hooks/`）は Node で、`src/` の `*.test.tsx` は jsdom で動く（`vitest.config.mts`）

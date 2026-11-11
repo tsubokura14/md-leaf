@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import type { MouseEvent } from "react";
+import { useEffect, useRef, type MouseEvent } from "react";
+import { renderMermaid } from "./mermaid";
 
 type NoteBodyContentProps = {
   html: string;
@@ -25,9 +26,54 @@ function isPlainLeftClick(event: MouseEvent): boolean {
   );
 }
 
-/** ノートの本文（HTML）。ノートへのリンクを押すと、読み込み直さずに移る */
+// 描くあいだと描いたあとの SVG の id。ページの中で重ならないよう、描くたびに数を進める
+let diagramCount = 0;
+
+// mermaid が付ける幅（width="100%" と、もとの幅の max-width）を、もとの幅に直す。
+// 収まらない図は枠の中で横にスクロールする（note-body.css の .mermaid-figure。決まりは docs/ui.md の「図（Mermaid）」）
+function keepNaturalWidth(svg: SVGSVGElement) {
+  const naturalWidth = svg.style.maxWidth;
+  if (!naturalWidth) return;
+  svg.setAttribute("width", naturalWidth);
+  svg.style.removeProperty("max-width");
+}
+
+// 本文の中の pre[data-mermaid]（src/lib/highlight.ts が付ける）を、1つずつ図に替える。
+// 描き終わるまでと、描けなかったときは pre（元のコード）を残す。
+// 本文は dangerouslySetInnerHTML で入れてあり、React は html が変わるまで中に触らないので、ここで書き換えてよい
+async function drawDiagrams(body: HTMLElement, isCancelled: () => boolean) {
+  for (const pre of body.querySelectorAll<HTMLElement>("pre[data-mermaid]")) {
+    let svg: string;
+    try {
+      diagramCount += 1;
+      svg = await renderMermaid(`mermaid-diagram-${diagramCount}`, pre.textContent ?? "");
+    } catch {
+      continue;
+    }
+    if (isCancelled() || !pre.isConnected) return;
+    const figure = document.createElement("div");
+    figure.className = "mermaid-figure";
+    figure.innerHTML = svg;
+    const svgElement = figure.querySelector("svg");
+    if (svgElement) keepNaturalWidth(svgElement);
+    pre.replaceWith(figure);
+  }
+}
+
+/** ノートの本文（HTML）。ノートへのリンクを押すと、読み込み直さずに移る。Mermaid の図はここで描く */
 export function NoteBodyContent({ html }: NoteBodyContentProps) {
   const router = useRouter();
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!body) return;
+    let cancelled = false;
+    void drawDiagrams(body, () => cancelled);
+    return () => {
+      cancelled = true;
+    };
+  }, [html]);
 
   function handleClick(event: MouseEvent<HTMLDivElement>) {
     if (!isPlainLeftClick(event)) return;
@@ -44,6 +90,7 @@ export function NoteBodyContent({ html }: NoteBodyContentProps) {
     // クリックはリンク（a）で起きたものだけを扱い、キーボードの Enter もリンクのクリックとして届くので、
     // div 自身にキー操作や役割は要らない
     <div
+      ref={bodyRef}
       className="note-body mt-6"
       onClick={handleClick}
       dangerouslySetInnerHTML={{ __html: html }}

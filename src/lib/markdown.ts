@@ -3,12 +3,18 @@ import type { Html, Root as MdastRoot } from "mdast";
 import rehypeStringify from "rehype-stringify";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { parse as parseYaml } from "yaml";
+import { callouts } from "./callouts";
+import { highlightCode } from "./highlight";
+import { renderMath } from "./math";
+import { noteImages } from "./note-images";
 import { resolveNoteLink } from "./note-links";
+import { wrapTables } from "./tables";
 
 export type RenderedMarkdown = {
   /** フロントマターの `title`。ないときは undefined（ファイル名を使うかは呼ぶ側が決める） */
@@ -16,6 +22,8 @@ export type RenderedMarkdown = {
   html: string;
   /** リンク先のノートがないリンク（書かれたままの形）。links を渡さなければいつも空 */
   brokenLinks: string[];
+  /** ファイルがない・コンテンツフォルダの外を指す・対象外の拡張子の画像（書かれたままの形）。links を渡さなければいつも空 */
+  brokenImages: string[];
 };
 
 export type NoteLinkContext = {
@@ -23,6 +31,8 @@ export type NoteLinkContext = {
   fromPath: string;
   /** 一覧にある全部のノートのパス（ホームの index を含む） */
   notePaths: ReadonlySet<string>;
+  /** コンテンツフォルダの中の、対象の拡張子の画像のパス（コンテンツフォルダから、拡張子つき） */
+  filePaths: ReadonlySet<string>;
 };
 
 // フロントマター（先頭の yaml）を本文から外し、title を file.data に置く
@@ -130,10 +140,21 @@ const processor = unified()
   .use(remarkFrontmatter, ["yaml"])
   .use(extractFrontmatter)
   .use(remarkGfm)
+  .use(remarkMath)
+  .use(callouts)
   .use(remarkRehype, { handlers: { html: htmlAsText } })
   .use(externalLinksInNewTab)
   .use(noteLinks)
-  .use(rehypeStringify);
+  .use(noteImages)
+  .use(renderMath)
+  .use(highlightCode)
+  .use(wrapTables)
+  // raw ノード（HTML の文字列）をそのまま出す。本文は dangerouslySetInnerHTML で入れるので、raw にノートの文字が
+  // HTML のまま入ると、スクリプトが動く穴になる。
+  // 前提（崩れたら見直す）：raw を作るのは KaTeX（math.ts）と highlight.js（highlight.ts）の結果だけで、どちらも
+  // 中の文字を符号化済み。ノートの HTML のタグは htmlAsText で文字にしてあり、raw にならない。
+  // raw を作る処理を足すときは見直す
+  .use(rehypeStringify, { allowDangerousHtml: true });
 
 /** links がなければ、リンクを書き換えない（一覧の名前を読むときは要らないため） */
 export function renderMarkdown(source: string, links?: NoteLinkContext): RenderedMarkdown {
@@ -143,5 +164,6 @@ export function renderMarkdown(source: string, links?: NoteLinkContext): Rendere
     title: typeof title === "string" ? title : undefined,
     html: String(file),
     brokenLinks: (file.data.brokenLinks as string[] | undefined) ?? [],
+    brokenImages: (file.data.brokenImages as string[] | undefined) ?? [],
   };
 }

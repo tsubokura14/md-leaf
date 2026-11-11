@@ -12,7 +12,7 @@ const NOTE_EXTENSION = ".md";
 const HOME_PATH = "index";
 const schemePattern = /^[a-z][a-z\d+.-]*:/i;
 
-function decodeSegment(segment: string): string {
+export function decodeSegment(segment: string): string {
   try {
     return decodeURIComponent(segment);
   } catch {

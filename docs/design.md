@@ -12,6 +12,7 @@
 | `src/app/` | 画面（App Router のページとレイアウト）。データの読み込みと組み立ては `src/lib/` を呼ぶだけにする |
 | `src/app/(reader)/` | ログインの画面以外のページ（ホーム、ノート）。上の帯とノートの一覧はこのグループのレイアウトに置く。ログインの画面はグループの外に置き、上の帯と一覧を出さない |
 | `src/app/(reader)/data.ts` | `src/lib/notes.ts` を `"use cache"` の関数で包み、ビルドのときに読む。ページはここを呼ぶ。`"use cache"` などの Next.js の書き方は `src/lib/` に持ち込まず、ここに置く |
+| `src/app/files/` | ノートの画像を返す入口（Route Handler）。上の帯と一覧が要らないので `(reader)` の外に置く（「画像を返す入口は、コンテンツフォルダの中の画像だけを返す」） |
 | `src/components/` | 画面の部品（複数の画面で使うもの） |
 | `src/lib/` | 画面に関係しない処理（ノートの読み込み、Markdown から HTML への変換など）。React に依存しない |
 | `src/styles/tokens.css` | トークンファイル。色・文字・余白などの値はここにだけ書く |
@@ -60,3 +61,10 @@
 - 「ログインしている」は、セッションがあり、そのアドレスが今の `ALLOWED_EMAILS` に入っていること。開くたびに比べるので、許可するアドレスから外して再デプロイすれば、ログイン中の人も締め出せる。移す先は `src/lib/access.ts` が決める（ログインしていなければ `/login?callbackUrl=<開こうとした URL>`、ログイン中に `/login` を開けば `/`）
 - 前提（崩れたら見直す）：`src/proxy.ts` の `matcher` から外した場所（`/api/auth/`、`/_next/static/`、`/_next/image`、`/favicon.ico`）は守られない。ノートの画像などを足すときも、`matcher` から外さない。ページの中に、ログインを飛ばす入口を作らない
 - 当てはまる場所：`src/proxy.ts`、`src/lib/access.ts`、`src/app/` のすべてのページ
+
+### 画像を返す入口は、コンテンツフォルダの中の画像だけを返す
+- ノートの画像は、ノートの HTML に入れず、`/files/<コンテンツフォルダからのパス>` の URL で返す（`src/app/files/[...path]/route.ts`）。本文の画像の相対パスは、変換のときにこの URL に書き換える。対象の拡張子と Content-Type、URL の形は `src/lib/note-files.ts` の1か所に置き、変換と入口の両方が使う
+- 返すのは、ノートの一覧と同じく読み込んだときに集めた、対象の拡張子（png・jpg・jpeg・gif・webp・svg）のファイルだけ。URL からファイルのパスを組み立てない。名前が「.」で始まるファイル・フォルダは集めないので返さない
+- 理由：ファイルを返す入口は、作りを間違えると、コンテンツフォルダの外やノート以外のファイル（`.env` など）を読ませる穴になる。集めた一覧の中だけを探せば、`..` などを書かれても外は読めない。svg は直接開くとスクリプトが動きうるので、`Content-Security-Policy: sandbox` を付けて返す
+- 前提（崩れたら見直す）：ログインの確かめは `src/proxy.ts` に任せている。`matcher` から `/files/` を外すと、ログインしていなくても画像が見える。画像の種類を足すときは `src/lib/note-files.ts` だけを直す。ノートを置く場所を変えたら、`outputFileTracingIncludes` も合わせる（「`content/` をサーバーの出力に入れる」）
+- 当てはまる場所：`src/app/files/[...path]/route.ts`、`src/lib/notes.ts` の `readContentFile`、`src/lib/note-files.ts`、`src/lib/note-images.ts`、`src/proxy.ts` の `matcher`

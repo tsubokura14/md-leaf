@@ -58,6 +58,7 @@ describe("renderMarkdown", () => {
     const links = {
       fromPath: "開発/Git ブランチの運用メモ",
       notePaths: new Set(["index", "開発/リリースの手順", "開発/Docker のメモ"]),
+      filePaths: new Set<string>(),
     };
 
     test(".md の相対リンクを、ノートの URL に書き換え、data-note-link を付ける", () => {
@@ -98,5 +99,137 @@ describe("renderMarkdown", () => {
       expect(result.html).toBe("<p>[[リリースの手順]]</p>");
       expect(result.brokenLinks).toEqual([]);
     });
+  });
+
+  describe("画像（links を渡したとき）", () => {
+    const links = {
+      fromPath: "開発/Git ブランチの運用メモ",
+      notePaths: new Set(["開発/Git ブランチの運用メモ"]),
+      filePaths: new Set(["開発/branch-graph.png", "images/a b.png"]),
+    };
+    const files = (path: string) => `/files/${path.split("/").map(encodeURIComponent).join("/")}`;
+
+    test("画像だけの段落は、/files/ の URL の画像と、代わりの文字の説明にする", () => {
+      const result = renderMarkdown("![ブランチの図](branch-graph.png)", links);
+      expect(result.html).toBe(
+        `<figure><img src="${files("開発/branch-graph.png")}" alt="ブランチの図">` +
+          "<figcaption>ブランチの図</figcaption></figure>",
+      );
+      expect(result.brokenImages).toEqual([]);
+    });
+
+    test("代わりの文字が空なら、説明を出さない", () => {
+      const result = renderMarkdown("![](<../images/a b.png>)", links);
+      expect(result.html).toBe(`<figure><img src="${files("images/a b.png")}" alt=""></figure>`);
+    });
+
+    test("文の途中の画像は、説明を付けず img のまま", () => {
+      const result = renderMarkdown("図 ![ブランチの図](branch-graph.png) を見る", links);
+      expect(result.html).toBe(
+        `<p>図 <img src="${files("開発/branch-graph.png")}" alt="ブランチの図"> を見る</p>`,
+      );
+    });
+
+    test("ファイルがない・外を指す・対象外の拡張子の画像は、書かれたままのパスを brokenImages に返す", () => {
+      const result = renderMarkdown(
+        "![a](ない.png) ![b](../../外.png) ![c](<../images/a b.png>) ![d](memo.txt)",
+        links,
+      );
+      expect(result.brokenImages).toEqual(["ない.png", "../../外.png", "memo.txt"]);
+      expect(result.html).toContain(`src="/files/${encodeURIComponent("../外.png")}"`);
+    });
+
+    test("http(s):// の画像はそのまま出し、切れた画像にしない", () => {
+      const result = renderMarkdown("![外](https://example.com/a.png)", links);
+      expect(result.html).toBe(
+        '<figure><img src="https://example.com/a.png" alt="外"><figcaption>外</figcaption></figure>',
+      );
+      expect(result.brokenImages).toEqual([]);
+    });
+
+    test("![[ ]] の書き方は画像にせず、文字のまま出す", () => {
+      const result = renderMarkdown("![[branch-graph.png]]", links);
+      expect(result.html).toBe("<p>![[branch-graph.png]]</p>");
+      expect(result.brokenImages).toEqual([]);
+    });
+  });
+
+  describe("コード", () => {
+    test("言語を書いたコードは、その言語の書き方で色分けする", () => {
+      const result = renderMarkdown('```js\n// 消す\nconst a = "x";\n```\n');
+      expect(result.html).toBe(
+        '<pre><code class="language-js"><span class="hljs-comment">// 消す</span>\n' +
+          '<span class="hljs-keyword">const</span> a = <span class="hljs-string">&quot;x&quot;</span>;\n' +
+          "</code></pre>",
+      );
+    });
+
+    test("色分けしても、コードの中の HTML のタグは文字のまま出す", () => {
+      const result = renderMarkdown('```js\nconst a = "<b>x</b>";\n```\n');
+      expect(result.html).not.toContain("<b>");
+      expect(result.html).toContain("&lt;b&gt;x&lt;/b&gt;");
+    });
+
+    test("言語を書かないコードは、色分けせずに出す", () => {
+      const result = renderMarkdown('```\nconst a = "x";\n```\n');
+      expect(result.html).toBe('<pre><code>const a = "x";\n</code></pre>');
+    });
+
+    test("知らない言語のコードは、色分けせずに出す", () => {
+      const result = renderMarkdown('```nosuchlang\nconst a = "x";\n```\n');
+      expect(result.html).toBe(
+        '<pre><code class="language-nosuchlang">const a = "x";\n</code></pre>',
+      );
+    });
+
+    test("mermaid のコードは、色分けせず、ブラウザで描く印（data-mermaid）を pre に付ける", () => {
+      const result = renderMarkdown("```mermaid\nflowchart LR\n  A --> B\n```\n");
+      expect(result.html).toBe(
+        '<pre data-mermaid=""><code class="language-mermaid">flowchart LR\n  A --> B\n</code></pre>',
+      );
+    });
+    test("文の中のコードは、色分けしない", () => {
+      const result = renderMarkdown('`const a = "x"` を書く\n');
+      expect(result.html).toBe('<p><code>const a = "x"</code> を書く</p>');
+    });
+  });
+
+  describe("数式", () => {
+    test("$...$ は、文の中の数式として KaTeX の式にする", () => {
+      const result = renderMarkdown("時間は $t_i$ と書く\n");
+      expect(result.html).toMatch(/^<p>時間は <span class="katex">[\s\S]*<\/span> と書く<\/p>$/);
+      expect(result.html).not.toContain("katex-display");
+      expect(result.html).not.toContain("$");
+    });
+
+    test("$$...$$ は、本文の中央に置く数式として KaTeX の式にする", () => {
+      const result = renderMarkdown("$$\nT = \\sum_{i=1}^{n} t_i\n$$\n");
+      expect(result.html).toMatch(/^<span class="katex-display">[\s\S]*<\/span>$/);
+      expect(result.html).not.toContain("<pre");
+      expect(result.html).not.toContain("$");
+    });
+
+    test("文の中の数式が式にできないときは、書いたままの文字を出す", () => {
+      const result = renderMarkdown("式は $\\nosuchcommand{x}$ です\n");
+      expect(result.html).toBe(
+        '<p>式は <span class="math-error">$\\nosuchcommand{x}$</span> です</p>',
+      );
+    });
+
+    test("本文の中央に置く数式が式にできないときは、書いたままの文字を出す", () => {
+      const result = renderMarkdown("$$\n\\frac{1}{\n$$\n");
+      expect(result.html).toBe('<div class="math-error">$$\n\\frac{1}{\n$$</div>');
+    });
+
+    test("$ が1つだけのときは、数式にせず文字のまま出す", () => {
+      const result = renderMarkdown("値段は 100$ です\n");
+      expect(result.html).toBe("<p>値段は 100$ です</p>");
+    });
+  });
+
+  test("表は、横にスクロールする枠（div.table-scroll）で包み、列の揃えを残す", () => {
+    const result = renderMarkdown("| a | b |\n| --- | :-: |\n| 1 | 2 |\n");
+    expect(result.html).toMatch(/^<div class="table-scroll"><table>[\s\S]*<\/table><\/div>$/);
+    expect(result.html).toContain('<th align="center">b</th>');
   });
 });

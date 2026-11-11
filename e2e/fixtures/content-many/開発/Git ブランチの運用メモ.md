@@ -53,3 +53,7 @@ git branch -d "12-due-date-input"
 $$
 T = 1.2 \times \sum_{i=1}^{n} t_i
 $$
+
+## ブランチの図
+
+![ブランチの図](branch-graph.png)

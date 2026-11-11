@@ -2,7 +2,14 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { contentDir, listNotePaths, readHome, readNote, readNoteTree } from "./notes";
+import {
+  contentDir,
+  listNotePaths,
+  readContentFile,
+  readHome,
+  readNote,
+  readNoteTree,
+} from "./notes";
 
 let dir: string;
 
@@ -273,5 +280,75 @@ describe("ノートの中のリンク", () => {
     await readNote(["開発", "a"], dir);
 
     expect(warn).not.toHaveBeenCalled();
+  });
+});
+
+describe("ノートの中の画像", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  test("画像のファイルがないときは、ノートのファイル名とパスを警告に出す", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await put({
+      "開発/a.md": "![図](ない.png)\n\n![ある](図.png)\n\n![画像だけ](../画像だけ/b.png)",
+      "開発/図.png": "png",
+      "画像だけ/b.png": "png",
+    });
+
+    await readNote(["開発", "a"], dir);
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.join(" ")).toBe("画像のファイルがありません: 開発/a.md → ない.png");
+  });
+});
+
+describe("readContentFile", () => {
+  beforeEach(async () => {
+    await put({
+      "開発/branch graph.png": "png",
+      "開発/図.svg": "<svg/>",
+      "開発/写真.JPG": "jpg",
+      "開発/メモ.md": "本文",
+      "開発/読んで.txt": "x",
+      ".obsidian/icon.png": "png",
+      "画像だけ/a.webp": "webp",
+    });
+  });
+
+  test("コンテンツフォルダの中の画像を、その Content-Type で返す", async () => {
+    const png = await readContentFile(["開発", "branch graph.png"], dir);
+    expect(png?.contentType).toBe("image/png");
+    expect(png?.body.toString()).toBe("png");
+    expect((await readContentFile(["開発", "図.svg"], dir))?.contentType).toBe("image/svg+xml");
+    expect((await readContentFile(["開発", "写真.JPG"], dir))?.contentType).toBe("image/jpeg");
+    expect((await readContentFile(["画像だけ", "a.webp"], dir))?.contentType).toBe("image/webp");
+  });
+
+  test("URL の符号化のままのパスでも探せる", async () => {
+    const file = await readContentFile(
+      [encodeURIComponent("開発"), encodeURIComponent("branch graph.png")],
+      dir,
+    );
+    expect(file?.contentType).toBe("image/png");
+  });
+
+  test("ないファイル・画像でないファイル・「.」で始まるフォルダの中は返さない", async () => {
+    expect(await readContentFile(["開発", "ない.png"], dir)).toBeUndefined();
+    expect(await readContentFile(["開発", "メモ.md"], dir)).toBeUndefined();
+    expect(await readContentFile(["開発", "読んで.txt"], dir)).toBeUndefined();
+    expect(await readContentFile([".obsidian", "icon.png"], dir)).toBeUndefined();
+  });
+
+  test("コンテンツフォルダの外は返さない", async () => {
+    await writeFile(join(dir, "..", "md-leaf-outside.png"), "外");
+    try {
+      expect(await readContentFile(["..", "md-leaf-outside.png"], dir)).toBeUndefined();
+      expect(
+        await readContentFile([encodeURIComponent("../md-leaf-outside.png")], dir),
+      ).toBeUndefined();
+    } finally {
+      await rm(join(dir, "..", "md-leaf-outside.png"), { force: true });
+    }
   });
 });

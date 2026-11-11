@@ -1,3 +1,4 @@
+import "katex/dist/katex.min.css";
 import "./note-body.css";
 import { NoteBodyContent } from "./note-body-content";
 
