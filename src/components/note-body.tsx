@@ -17,6 +17,8 @@ export function NoteBody({ title, html }: NoteBodyProps) {
         lg:px-10 lg:pt-10
       "
     >
+      {/* .reading は本文の文字の大きさ（tokens.css）を当てる場所で、上の帯の「Aa」を出す目印にもなる
+          （src/components/font-size-menu.tsx）。本文がない画面では .reading を使わない */}
       <article className="reading mx-auto max-w-prose font-body">
         <h1 className="text-2xl leading-tight font-bold">{title}</h1>
         <NoteBodyContent html={html} />

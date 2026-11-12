@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { readingSizeScript } from "@/components/reading-size";
 import { themeScript } from "@/components/theme";
 import "./globals.css";
 
@@ -9,10 +10,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    // ライト/ダークは <head> のスクリプトが <html> の class を変える（src/components/theme.ts）
+    // <head> のスクリプトが、ライト/ダークは <html> の class を、本文の文字の大きさは style を変える
+    // （src/components/theme.ts・src/components/reading-size.ts）
     <html lang="ja" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: readingSizeScript }} />
       </head>
       <body className="bg-bg font-ui text-text">{children}</body>
     </html>
