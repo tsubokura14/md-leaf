@@ -468,6 +468,12 @@ test.describe("ノートが見つからない", () => {
     await expect(page).toHaveScreenshot("note-notfound.png", { fullPage: true });
   });
 
+  // ある URL も確かめる。Proxy に埋め込むノートの一覧（next.config.ts）が空でも、画面はノートを出すため
+  test("ない URL は、HTTP のステータス 404 で返す（ある URL は 200）", async ({ page }) => {
+    expect((await page.goto(MISSING))?.status()).toBe(404);
+    expect((await page.goto(GIT_NOTE))?.status()).toBe(200);
+  });
+
   test("PC：ノートの一覧では何も強調しない", async ({ page }) => {
     await page.setViewportSize(PC);
     await page.goto(MISSING);

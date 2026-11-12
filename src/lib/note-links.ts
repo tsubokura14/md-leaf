@@ -1,5 +1,5 @@
 import { posix } from "node:path";
-import { NOTE_PREFIX, noteHref } from "./note-url";
+import { decodeSegment, NOTE_PREFIX, noteHref } from "./note-url";
 
 export type ResolvedNoteLink = {
   /** リンク先のノートのパス（コンテンツフォルダから、.md を除く）。コンテンツフォルダの外を指すときは undefined */
@@ -11,15 +11,6 @@ export type ResolvedNoteLink = {
 const NOTE_EXTENSION = ".md";
 const HOME_PATH = "index";
 const schemePattern = /^[a-z][a-z\d+.-]*:/i;
-
-export function decodeSegment(segment: string): string {
-  try {
-    return decodeURIComponent(segment);
-  } catch {
-    // 「100%」のように、符号化されていない % を含む名前はそのまま使う
-    return segment;
-  }
-}
 
 /**
  * ノートの中のリンクの href（hast にしたあとの、符号化された形）から、リンク先のノートを決める。

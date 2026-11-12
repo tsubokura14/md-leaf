@@ -63,6 +63,12 @@
 - 前提（崩れたら見直す）：`src/proxy.ts` の `matcher` から外した場所（`/api/auth/`、`/_next/static/`、`/_next/image`、`/favicon.ico`）は守られない。ノートの画像などを足すときも、`matcher` から外さない。ページの中に、ログインを飛ばす入口を作らない
 - 当てはまる場所：`src/proxy.ts`、`src/lib/access.ts`、`src/app/` のすべてのページ
 
+### 見つからないノートは、Proxy で 404 にする
+- 理由：Cache Components では、ページの枠を先に送った時点でステータスが 200 に決まり、ページの中の `notFound()` では 404 にできない。ページより前の `src/proxy.ts` で、`/notes/` の下の URL がノートの一覧にあるか確かめ、なければ同じ URL のまま `status: 404` で組み立てる（画面はページの `not-found.tsx` のまま）
+- Proxy の出力には `outputFileTracingIncludes` が効かず、本番では `content/` を読めない。そこで `next.config.ts` が、ビルドのときにノートのパスの一覧（`listNotePaths`）を環境変数 `NOTE_PATHS` として Proxy に埋め込む。URL とパスを合わせる処理（`src/lib/note-url.ts`）は、ページの `readNote` と同じものを使う
+- 前提（崩れたら見直す）：ノートはビルドのときに読む。ノートを足したら再ビルドが要る（`npm run dev` も起動し直す。起動し直すまで、足したノートは Proxy で 404 になる）。実行のたびに読む作りに変えたら、Proxy での確かめ方を見直す。ページが `notFound()` を呼ぶ条件（`readNote` がないとする URL）と、Proxy が 404 にする条件は同じにしておく
+- 当てはまる場所：`src/proxy.ts`、`next.config.ts` の `env`、`src/lib/note-url.ts`、`src/lib/notes.ts` の `readNote`・`listNotePaths`
+
 ### 画像を返す入口は、コンテンツフォルダの中の画像だけを返す
 - ノートの画像は、ノートの HTML に入れず、`/files/<コンテンツフォルダからのパス>` の URL で返す（`src/app/files/[...path]/route.ts`）。本文の画像の相対パスは、変換のときにこの URL に書き換える。対象の拡張子と Content-Type、URL の形は `src/lib/note-files.ts` の1か所に置き、変換と入口の両方が使う
 - 返すのは、ノートの一覧と同じく読み込んだときに集めた、対象の拡張子（png・jpg・jpeg・gif・webp・svg）のファイルだけ。URL からファイルのパスを組み立てない。名前が「.」で始まるファイル・フォルダは集めないので返さない

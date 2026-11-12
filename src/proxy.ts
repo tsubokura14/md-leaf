@@ -2,13 +2,20 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { decideAccess } from "@/lib/access";
 import { isAllowedEmail } from "@/lib/allowed-emails";
+import { isMissingNote } from "@/lib/note-url";
+
+// ビルドのときに next.config.ts が埋め込む（docs/design.md の「見つからないノートは、Proxy で 404 にする」）
+const notePaths: string[] = JSON.parse(process.env.NOTE_PATHS ?? "[]");
 
 // docs/design.md「ログインしていなければ、ログインの画面以外を出さない」
 export default auth((req) => {
   const loggedIn = isAllowedEmail(req.auth?.user?.email);
   const to = decideAccess(req.nextUrl, loggedIn);
-  if (to === null) return NextResponse.next();
-  return NextResponse.redirect(new URL(to, req.nextUrl));
+  if (to !== null) return NextResponse.redirect(new URL(to, req.nextUrl));
+  if (isMissingNote(req.nextUrl.pathname, notePaths)) {
+    return NextResponse.rewrite(req.nextUrl, { status: 404 });
+  }
+  return NextResponse.next();
 });
 
 export const config = {

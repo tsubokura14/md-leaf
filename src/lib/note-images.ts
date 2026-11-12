@@ -2,7 +2,7 @@ import { posix } from "node:path";
 import type { Element, ElementContent, Root as HastRoot } from "hast";
 import type { VFile } from "vfile";
 import { FILE_PREFIX, fileHref, imageContentType } from "./note-files";
-import { decodeSegment } from "./note-links";
+import { decodeSegment } from "./note-url";
 
 export type ResolvedImage = {
   /** 画像のパス（コンテンツフォルダから）。コンテンツフォルダの外を指すときは undefined */

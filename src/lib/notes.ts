@@ -3,7 +3,7 @@ import { join, resolve } from "node:path";
 import type { NoteHeading } from "./headings";
 import { renderMarkdown } from "./markdown";
 import { imageContentType } from "./note-files";
-import { decodeSegment } from "./note-links";
+import { decodeSegment, toNotePath } from "./note-url";
 
 export type NoteTreeNote = {
   type: "note";
@@ -150,7 +150,7 @@ export async function listNotePaths(dir = contentDir()): Promise<string[][]> {
 // ファイルのパスを組み立てず、読み込んだ一覧の中から探す。
 // 「..」などでコンテンツフォルダの外を読ませないため
 export async function readNote(segments: string[], dir = contentDir()): Promise<Note | undefined> {
-  const path = segments.map(decodeSegment).join("/");
+  const path = toNotePath(segments);
   const { root, homeFile, files } = await scan(dir);
   const notes = flatten(root);
   const found = notes.find((note) => note.path === path);
