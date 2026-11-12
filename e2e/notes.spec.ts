@@ -28,6 +28,11 @@ async function waitForDiagram(page: Page) {
   await expect(page.locator(".note-body pre[data-mermaid]")).toHaveCount(0);
 }
 
+// ダークを選んであるブラウザにする（キーは src/components/theme.ts の THEME_KEY）
+async function chooseDark(page: Page) {
+  await page.addInitScript(() => window.localStorage.setItem("md-leaf-theme", "dark"));
+}
+
 async function openDrawer(page: Page) {
   await clickWhenHydrated(page.getByRole("button", { name: "ノートの一覧を開く" }));
   await expect(drawer(page)).toBeVisible();
@@ -47,6 +52,14 @@ test.describe("ホーム", () => {
     await expect(place(page)).toHaveText("ホーム");
     await expect(page).toHaveTitle("md-leaf");
     await expect(page).toHaveScreenshot("home-index.png", { fullPage: true });
+  });
+
+  test("index.md がある（ダーク）", async ({ page }) => {
+    await chooseDark(page);
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1, name: "ノートの入り口" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "ライトにする" })).toBeVisible();
+    await expect(page).toHaveScreenshot("home-index-dark.png", { fullPage: true });
   });
 
   test("PC：左の一覧で「ホーム」を強調し、フォルダはすべて閉じる", async ({ page }) => {
@@ -78,6 +91,17 @@ test.describe("ノート", () => {
     await expect(page).toHaveTitle("Git ブランチの運用メモ - md-leaf");
     await waitForDiagram(page);
     await expect(page).toHaveScreenshot("note-default.png", { fullPage: true });
+  });
+
+  test("表示（ダーク）", async ({ page }) => {
+    await chooseDark(page);
+    await page.goto(GIT_NOTE);
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Git ブランチの運用メモ" }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "ライトにする" })).toBeVisible();
+    await waitForDiagram(page);
+    await expect(page).toHaveScreenshot("note-default-dark.png", { fullPage: true });
   });
 
   test("PC：☰ を出さず、左の一覧で今のノートを強調し、そのフォルダを開く", async ({ page }) => {

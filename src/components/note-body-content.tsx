@@ -40,27 +40,39 @@ function keepNaturalWidth(svg: SVGSVGElement) {
 
 // 本文の中の pre[data-mermaid]（src/lib/highlight.ts が付ける）を、1つずつ図に替える。
 // 描き終わるまでと、描けなかったときは pre（元のコード）を残す。
+// 図（.mermaid-figure）には元のコードを data-mermaid-source に残し、ライト・ダークが変わったら、それから描き直す
+// （renderMermaid は描くたびにトークンから色を読むので、描き直せば今の色になる）。
 // 本文は dangerouslySetInnerHTML で入れてあり、React は html が変わるまで中に触らないので、ここで書き換えてよい
 async function drawDiagrams(body: HTMLElement, isCancelled: () => boolean) {
-  for (const pre of body.querySelectorAll<HTMLElement>("pre[data-mermaid]")) {
+  const targets = body.querySelectorAll<HTMLElement>(
+    "pre[data-mermaid], .mermaid-figure[data-mermaid-source]",
+  );
+  for (const target of targets) {
+    const source =
+      target.tagName === "PRE" ? (target.textContent ?? "") : (target.dataset.mermaidSource ?? "");
     let svg: string;
     try {
       diagramCount += 1;
-      svg = await renderMermaid(`mermaid-diagram-${diagramCount}`, pre.textContent ?? "");
+      svg = await renderMermaid(`mermaid-diagram-${diagramCount}`, source);
     } catch {
       continue;
     }
-    if (isCancelled() || !pre.isConnected) return;
+    if (isCancelled() || !target.isConnected) return;
     const figure = document.createElement("div");
     figure.className = "mermaid-figure";
+    figure.dataset.mermaidSource = source;
     figure.innerHTML = svg;
     const svgElement = figure.querySelector("svg");
     if (svgElement) keepNaturalWidth(svgElement);
-    pre.replaceWith(figure);
+    target.replaceWith(figure);
   }
 }
 
-/** ノートの本文（HTML）。ノートへのリンクを押すと、読み込み直さずに移る。Mermaid の図はここで描く */
+function isDark(): boolean {
+  return document.documentElement.classList.contains("dark");
+}
+
+/** ノートの本文（HTML）。ノートへのリンクを押すと、読み込み直さずに移る。Mermaid の図はここで描き、ライト・ダークが変わると描き直す */
 export function NoteBodyContent({ html }: NoteBodyContentProps) {
   const router = useRouter();
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -68,10 +80,26 @@ export function NoteBodyContent({ html }: NoteBodyContentProps) {
   useEffect(() => {
     const body = bodyRef.current;
     if (!body) return;
-    let cancelled = false;
-    void drawDiagrams(body, () => cancelled);
+    // 描くたびに数を進め、新しく描き始めたら、前の描きかけ（古い色）は捨てる
+    let run = 0;
+    const draw = () => {
+      run += 1;
+      const current = run;
+      void drawDiagrams(body, () => current !== run);
+    };
+    draw();
+    // ライト・ダークは <html> の .dark だけで決まる（src/components/theme.ts）。ボタンで押したときも、
+    // 一度も選んでいないあいだに端末の設定が変わったときも、ここで同じように描き直す
+    let dark = isDark();
+    const observer = new MutationObserver(() => {
+      if (isDark() === dark) return;
+      dark = isDark();
+      draw();
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     return () => {
-      cancelled = true;
+      observer.disconnect();
+      run += 1;
     };
   }, [html]);
 

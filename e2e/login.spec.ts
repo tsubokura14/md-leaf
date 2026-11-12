@@ -28,10 +28,10 @@ test.describe("ログインの画面", () => {
   });
 
   test("ログイン前（ダーク）", async ({ page }) => {
+    // ダークを選んで覚えておいたブラウザで開く（キーは src/components/theme.ts の THEME_KEY）
+    await page.addInitScript(() => window.localStorage.setItem("md-leaf-theme", "dark"));
     await page.goto("/login");
     await expect(page.getByRole("button", { name: "Google でログインする" })).toBeVisible();
-    // ライト/ダークの切り替えはまだないので、クラスを直接付けて撮る
-    await page.evaluate(() => document.documentElement.classList.add("dark"));
     await expect(page).toHaveScreenshot("login-default-dark.png", { fullPage: true });
   });
 

@@ -10,7 +10,7 @@ function token(styles: CSSStyleDeclaration, name: string): string {
  */
 export async function renderMermaid(id: string, source: string): Promise<string> {
   const { default: mermaid } = await import("mermaid");
-  // 色と文字はトークンから読む。ダークに切り替えたときの描き直しは #7 で足す。
+  // 色と文字は、描くたびにトークンから読む（ライト・ダークが変わったときの描き直しは note-body-content.tsx）。
   // 箱の地は、図の枠（surface）の上で見分けられるよう bg にする
   const styles = getComputedStyle(document.documentElement);
   const text = token(styles, "--color-text");

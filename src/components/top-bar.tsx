@@ -2,6 +2,7 @@
 
 import { Fragment, Suspense, type ReactNode } from "react";
 import { usePlace } from "@/components/note-tree";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { TreeDrawer } from "@/components/tree-drawer";
 import type { NoteTree } from "@/lib/notes";
 
@@ -48,6 +49,7 @@ export function TopBar({ tree, treeFooter }: TopBarProps) {
       <Suspense fallback={<nav aria-label="場所" className={placeClass} />}>
         <Place tree={tree} />
       </Suspense>
+      <ThemeToggle />
     </header>
   );
 }

@@ -1,2 +1,5 @@
 @import "tailwindcss";
 @import "../styles/tokens.css";
+
+/* dark: の変形を、<html> の .dark のクラスに合わせる（src/components/theme.ts） */
+@custom-variant dark (&:where(.dark, .dark *));
