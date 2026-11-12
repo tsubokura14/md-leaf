@@ -17,7 +17,7 @@ describe("renderMarkdown", () => {
   test("フロントマターがなければ、title を返さず、本文はそのまま HTML にする", () => {
     const result = renderMarkdown("## 見出し\n\n本文です。\n");
     expect(result.title).toBeUndefined();
-    expect(result.html).toBe("<h2>見出し</h2>\n<p>本文です。</p>");
+    expect(result.html).toBe('<h2 data-heading="0">見出し</h2>\n<p>本文です。</p>');
   });
 
   test("フロントマターの title が数なら、文字にして返す", () => {

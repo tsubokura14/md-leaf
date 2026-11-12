@@ -60,6 +60,20 @@ export function MenuIcon({ className }: IconProps) {
   );
 }
 
+/** 点と線が並ぶ形。目次を開く */
+export function TocIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M9 6h11" />
+      <path d="M9 12h11" />
+      <path d="M9 18h11" />
+      <path d="M4 6h.01" />
+      <path d="M4 12h.01" />
+      <path d="M4 18h.01" />
+    </Svg>
+  );
+}
+
 /** ×。閉じる */
 export function CloseIcon({ className }: IconProps) {
   return (

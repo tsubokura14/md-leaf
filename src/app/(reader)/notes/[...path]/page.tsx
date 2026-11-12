@@ -25,5 +25,5 @@ export async function generateMetadata({
 export default async function NotePage({ params }: PageProps<"/notes/[...path]">) {
   const note = await getNote((await params).path);
   if (!note) notFound();
-  return <NoteBody title={note.title} html={note.html} />;
+  return <NoteBody title={note.title} html={note.html} headings={note.headings} />;
 }

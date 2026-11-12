@@ -32,6 +32,11 @@
   font-size: var(--text-lg);
 }
 
+/* 目次から移ったとき、見出しが上の帯（h-14）に隠れず、すぐ下に来るようにする（src/components/toc.tsx） */
+.note-body [data-heading] {
+  scroll-margin-top: calc(var(--spacing) * 18);
+}
+
 .note-body h4,
 .note-body h5,
 .note-body h6 {

@@ -16,8 +16,9 @@
 | `src/components/` | 画面の部品（複数の画面で使うもの） |
 | `src/lib/` | 画面に関係しない処理（ノートの読み込み、Markdown から HTML への変換など）。React に依存しない |
 | `src/styles/tokens.css` | トークンファイル。色・文字・余白などの値はここにだけ書く |
-| `src/app/globals.css` | Tailwind とトークンの読み込みと、`dark` の変形の定義（`<html>` の `.dark` に合わせる。`src/components/theme.ts`）、`reading` の変形の定義（本文の `.reading` があるページだけ。`src/components/font-size-menu.tsx`）だけ。値は書かない |
+| `src/app/globals.css` | Tailwind とトークンの読み込みと、`dark` の変形の定義（`<html>` の `.dark` に合わせる。`src/components/theme.ts`）、`reading` の変形の定義（本文の `.reading` があるページだけ。`src/components/font-size-menu.tsx`）、`toc` の変形の定義（見出しのある本文のページだけ。`src/components/toc.tsx`）だけ。値は書かない |
 | `src/components/note-body.css` | ノートの本文（Markdown から作った HTML）の見た目。HTML にクラスを付けられないので、`.note-body` の下の要素の選び方で書き、値はトークンの `var()` だけを使う |
+| `src/components/toc.css` | 目次の高さなど、Tailwind のトークンのクラスだけでは書けない値（画面の高さからの引き算）。値はトークンの `var()` だけを使う |
 | `content/` | ノート。この中の構成がそのままノートの一覧になる |
 | `*.test.ts(x)`・`*.test.mjs` | 単体・部品のテスト（Vitest）。テストするファイルの隣に置く（`src/`・`scripts/`・`.claude/hooks/`）。`src/` の `.tsx` は jsdom、それ以外は Node で動く |
 | `e2e/` | 画面を動かすテストと、画面の画像を比べるテスト（Playwright） |

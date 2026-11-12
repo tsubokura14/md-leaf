@@ -10,6 +10,7 @@ import { unified } from "unified";
 import { VFile } from "vfile";
 import { parse as parseYaml } from "yaml";
 import { callouts } from "./callouts";
+import { type NoteHeading, noteHeadings } from "./headings";
 import { highlightCode } from "./highlight";
 import { renderMath } from "./math";
 import { noteImages } from "./note-images";
@@ -24,6 +25,8 @@ export type RenderedMarkdown = {
   brokenLinks: string[];
   /** ファイルがない・コンテンツフォルダの外を指す・対象外の拡張子の画像（書かれたままの形）。links を渡さなければいつも空 */
   brokenImages: string[];
+  /** 本文の h2・h3 の一覧（本文の順） */
+  headings: NoteHeading[];
 };
 
 export type NoteLinkContext = {
@@ -149,6 +152,7 @@ const processor = unified()
   .use(renderMath)
   .use(highlightCode)
   .use(wrapTables)
+  .use(noteHeadings)
   // raw ノード（HTML の文字列）をそのまま出す。本文は dangerouslySetInnerHTML で入れるので、raw にノートの文字が
   // HTML のまま入ると、スクリプトが動く穴になる。
   // 前提（崩れたら見直す）：raw を作るのは KaTeX（math.ts）と highlight.js（highlight.ts）の結果だけで、どちらも
@@ -165,5 +169,6 @@ export function renderMarkdown(source: string, links?: NoteLinkContext): Rendere
     html: String(file),
     brokenLinks: (file.data.brokenLinks as string[] | undefined) ?? [],
     brokenImages: (file.data.brokenImages as string[] | undefined) ?? [],
+    headings: (file.data.headings as NoteHeading[] | undefined) ?? [],
   };
 }

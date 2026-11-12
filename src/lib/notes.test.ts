@@ -159,19 +159,20 @@ describe("readNote", () => {
   beforeEach(async () => {
     await put({
       "index.md": "---\ntitle: ノートの入り口\n---\n入り口",
-      "開発/Git ブランチの運用メモ.md": "---\ntitle: 運用メモ\n---\n\n本文です。\n",
+      "開発/Git ブランチの運用メモ.md": "---\ntitle: 運用メモ\n---\n\n本文です。\n\n## 流れ\n",
       "開発/題なし.md": "本文です。\n",
       "外.md": "本文",
     });
   });
 
-  test("分けたパスから、ノートの題と本文の HTML を返す", async () => {
+  test("分けたパスから、ノートの題と本文の HTML と見出しの一覧を返す", async () => {
     const note = await readNote(["開発", "Git ブランチの運用メモ"], dir);
 
     expect(note).toEqual({
       path: "開発/Git ブランチの運用メモ",
       title: "運用メモ",
-      html: "<p>本文です。</p>",
+      html: '<p>本文です。</p>\n<h2 data-heading="0">流れ</h2>',
+      headings: [{ id: "0", text: "流れ", depth: 2 }],
     });
   });
 
@@ -215,7 +216,12 @@ describe("readHome", () => {
 
     const home = await readHome(dir);
 
-    expect(home).toEqual({ path: "index", title: "ノートの入り口", html: "<p>入り口です。</p>" });
+    expect(home).toEqual({
+      path: "index",
+      title: "ノートの入り口",
+      html: "<p>入り口です。</p>",
+      headings: [],
+    });
   });
 
   test("一番上に index.md がなければ返さない", async () => {

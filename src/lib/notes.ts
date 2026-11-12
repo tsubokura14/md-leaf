@@ -1,5 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import type { NoteHeading } from "./headings";
 import { renderMarkdown } from "./markdown";
 import { imageContentType } from "./note-files";
 import { decodeSegment } from "./note-links";
@@ -33,6 +34,7 @@ export type Note = {
   path: string;
   title: string;
   html: string;
+  headings: NoteHeading[];
 };
 
 const HOME_FILE = "index.md";
@@ -204,11 +206,14 @@ async function toNote(
   notePaths: ReadonlySet<string>,
   filePaths: ReadonlySet<string>,
 ): Promise<Note> {
-  const { title, html, brokenLinks, brokenImages } = renderMarkdown(await readFile(file, "utf8"), {
-    fromPath: path,
-    notePaths,
-    filePaths,
-  });
+  const { title, html, brokenLinks, brokenImages, headings } = renderMarkdown(
+    await readFile(file, "utf8"),
+    {
+      fromPath: path,
+      notePaths,
+      filePaths,
+    },
+  );
   if (brokenLinks.length > 0) {
     console.warn(
       `リンク先のノートがありません: ${path}${NOTE_EXTENSION} → ${brokenLinks.join(", ")}`,
@@ -220,5 +225,5 @@ async function toNote(
     );
   }
   const fileName = path.split("/").at(-1) ?? path;
-  return { path, title: title ?? fileName, html };
+  return { path, title: title ?? fileName, html, headings };
 }

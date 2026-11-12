@@ -8,3 +8,7 @@
    画面を移るあいだ、Next.js（React の Activity）は前のページを style の display: none で隠して残すので、
    その中の .reading は数えない。前提（Next.js 16.4 で確かめた。崩れたら見直す）：隠すのは style の display: none */
 @custom-variant reading (&:where(body:has(.reading:not([style*="display: none"] *)) *));
+
+/* toc: の変形。見出しのある本文の目次（[data-toc]）を出しているページでだけ当てる（src/components/toc.tsx）。
+   前の画面を隠して残す扱いと前提は reading と同じ */
+@custom-variant toc (&:where(body:has([data-toc]:not([style*="display: none"] *)) *));

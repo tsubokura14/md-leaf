@@ -6,7 +6,7 @@ import { getHome, getNoteTree } from "./data";
 
 export default async function Home() {
   const home = await getHome();
-  if (home) return <NoteBody title={home.title} html={home.html} />;
+  if (home) return <NoteBody title={home.title} html={home.html} headings={home.headings} />;
 
   const tree = await getNoteTree();
   if (tree.children.length === 0) {

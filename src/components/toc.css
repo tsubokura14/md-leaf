@@ -1,0 +1,11 @@
+/* 目次の高さ。画面の高さから引くので、Tailwind のクラス（トークンの段階）では書けない */
+
+/* スマホの目次は、上に上の帯と同じくらいの幕が見える高さまで */
+.toc-sheet {
+  max-height: calc(100dvh - var(--spacing) * 24);
+}
+
+/* 広い PC の右の目次は、上の帯の下（sticky の top-24）から、画面の下の余白までに収める */
+.toc-side {
+  max-height: calc(100dvh - var(--spacing) * 30);
+}

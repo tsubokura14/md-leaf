@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { AppMark } from "@/components/app-mark";
 import { Logout } from "@/components/logout";
 import { NoteTree } from "@/components/note-tree";
+import { TocProvider } from "@/components/toc";
 import { TopBar } from "@/components/top-bar";
 import { getNoteTree } from "./data";
 
@@ -36,8 +37,11 @@ export default async function ReaderLayout({ children }: LayoutProps<"/">) {
         <TreeFooter />
       </aside>
       <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
-        <TopBar tree={tree} treeFooter={<TreeFooter />} />
-        <main className="flex-1">{children}</main>
+        {/* 上の帯の目次のボタンと、ページが出す目次の開閉を共有する */}
+        <TocProvider>
+          <TopBar tree={tree} treeFooter={<TreeFooter />} />
+          <main className="flex-1">{children}</main>
+        </TocProvider>
       </div>
     </div>
   );
