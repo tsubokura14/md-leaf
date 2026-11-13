@@ -39,8 +39,6 @@
   --font-weight-bold: 700;
 
   --spacing: 0.25rem;
-  /* 画面の下の、ジェスチャーの横線などが重なる部分の高さ（理由は src/app/layout.tsx の viewport） */
-  --spacing-safe-bottom: env(safe-area-inset-bottom);
   --default-transition-duration: 200ms;
   --default-transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
   --radius-sm: 2px;

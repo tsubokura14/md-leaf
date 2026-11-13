@@ -3,8 +3,6 @@
 /* スマホの目次は、上に上の帯と同じくらいの幕が見える高さまで */
 .toc-sheet {
   max-height: calc(100dvh - var(--spacing) * 24);
-  /* 下の余白に、ジェスチャーの横線などが重なる部分の高さを足す（トークンの safe-bottom） */
-  padding-bottom: calc(var(--spacing) * 8 + var(--spacing-safe-bottom));
 }
 
 /* 広い PC の右の目次は、上の帯の下（sticky の top-24）から、画面の下の余白までに収める */

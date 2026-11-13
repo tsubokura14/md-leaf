@@ -187,7 +187,7 @@ export function NoteToc({ headings }: { headings: NoteHeading[] }) {
           tabIndex={-1}
           className={`
             toc-sheet absolute inset-x-0 bottom-0 flex flex-col rounded-t-lg
-            border-t border-border bg-bg px-3 shadow-sheet outline-none
+            border-t border-border bg-bg px-3 pb-8 shadow-sheet outline-none
             transition-transform
             ${open ? "translate-y-0" : "translate-y-full"}
           `}

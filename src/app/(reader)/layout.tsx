@@ -25,7 +25,7 @@ export default async function ReaderLayout({ children }: LayoutProps<"/">) {
         className="
           hidden
           lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-72 lg:shrink-0 lg:flex-col
-          lg:border-r lg:border-border lg:pb-safe-bottom
+          lg:border-r lg:border-border
         "
       >
         <div className="flex h-14 shrink-0 items-center px-4">
@@ -36,7 +36,7 @@ export default async function ReaderLayout({ children }: LayoutProps<"/">) {
         </div>
         <TreeFooter />
       </aside>
-      <div className="flex min-h-dvh min-w-0 flex-1 flex-col pb-safe-bottom">
+      <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
         {/* 上の帯の目次のボタンと、ページが出す目次の開閉を共有する */}
         <TocProvider>
           <TopBar tree={tree} treeFooter={<TreeFooter />} />

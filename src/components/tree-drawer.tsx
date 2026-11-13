@@ -73,8 +73,7 @@ export function TreeDrawer({ tree, footer }: TreeDrawerProps) {
           aria-modal="true"
           aria-label="ノートの一覧"
           className={`
-            relative flex h-full w-72 flex-col bg-bg pb-safe-bottom
-            transition-transform
+            relative flex h-full w-72 flex-col bg-bg transition-transform
             ${open ? "translate-x-0" : "-translate-x-full"}
           `}
         >
