@@ -18,12 +18,16 @@ function Svg({ className, children }: IconProps & { children: React.ReactNode })
   );
 }
 
+/** 若葉の形（24×24 の中の線）。画面の印と、ホーム画面のアイコンの画像（src/components/app-icon.tsx）で同じ形にする */
+export const LEAF_PATHS = ["M4 20c0-8 5-14 16-16 0 9-5 16-16 16Z", "M4 20 13 11"] as const;
+
 /** 若葉。アプリの印 */
 export function LeafIcon({ className }: IconProps) {
   return (
     <Svg className={className}>
-      <path d="M4 20c0-8 5-14 16-16 0 9-5 16-16 16Z" />
-      <path d="M4 20 13 11" />
+      {LEAF_PATHS.map((d) => (
+        <path key={d} d={d} />
+      ))}
     </Svg>
   );
 }

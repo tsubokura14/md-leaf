@@ -38,6 +38,7 @@
 - 理由：見た目の値を `src/styles/tokens.css` の1か所にまとめ、ライト・ダークを同じトークン名で切り替えるため（`docs/ui.md` の「トークン」）
 - 前提（崩れたら見直す）：Tailwind の既定の値を `--*: initial` で消してある。これを外すと、トークンにないクラスも CSS が作られる
 - 当てはまる場所：`src/` のすべての TSX（`npm run lint` の ESLint が、トークンにないクラス、`[` を使う任意の値、色コード・`px` のリテラルを見つける）と、トークンファイル以外の `.css`（`scripts/check-tokens.mjs` が色コード・`rgb()`・`px` を見つける）。CSS に書いたクラス（`.reading`、`.note-body`）は Tailwind のクラスとして見つからないので、`eslint.config.mjs` の `no-unknown-classes` の `ignore` に足す
+- CSS の `var()` を使えない場所（マニフェスト・ホーム画面のアイコンの画像・時刻や電池の部分の色の `<meta name="theme-color">`）の色も、TS に書き写さない。ビルドのときに `next.config.ts` がトークンファイルを読み、`src/lib/token-colors.ts` で取り出した色を環境変数 `APP_COLORS`（JSON）として埋め込む。使う側は `readAppColors()` で読む（theme-color は `src/components/theme.ts` の `themeScript` が、ライト・ダークの bg を `<head>` のスクリプトに渡す）。トークンファイルの書き方を変えて色が見つからなくなったら、ビルドが止まる（違う色のまま出さないため）
 
 ### 画面の画像は、Playwright 公式の Docker イメージで撮って比べる
 - 理由：OS が違うと文字の描き方が変わり、画像が一致しないため。手元（`scripts/playwright-docker.mjs`）と CI（`.github/workflows/ci.yml` の `visual`）で同じイメージを使う
@@ -60,8 +61,9 @@
 ### ログインしていなければ、ログインの画面以外を出さない
 - 理由：ノートはビルドのときに HTML にするので、ページの中では止められない場合がある。まだない URL も含めて、どのページより前に `src/proxy.ts` で止める
 - 「ログインしている」は、セッションがあり、そのアドレスが今の `ALLOWED_EMAILS` に入っていること。開くたびに比べるので、許可するアドレスから外して再デプロイすれば、ログイン中の人も締め出せる。移す先は `src/lib/access.ts` が決める（ログインしていなければ `/login?callbackUrl=<開こうとした URL>`、ログイン中に `/login` を開けば `/`）
-- 前提（崩れたら見直す）：`src/proxy.ts` の `matcher` から外した場所（`/api/auth/`、`/_next/static/`、`/_next/image`、`/favicon.ico`）は守られない。ノートの画像などを足すときも、`matcher` から外さない。ページの中に、ログインを飛ばす入口を作らない
-- 当てはまる場所：`src/proxy.ts`、`src/lib/access.ts`、`src/app/` のすべてのページ
+- ホーム画面に追加するときにブラウザが読むマニフェストとアイコン（`/manifest.webmanifest`、`/icon/192`・`/icon/512`、`/apple-icon`）は、ログインしていなくても返す。ブラウザはこれらを Cookie を付けずに読むので、止めるとホーム画面に追加できない・全画面で開けないことがある。中身はアプリの名前・アイコン・色だけで、ノートの情報を入れない。外すのは決まった URL だけにする（その下や似た URL は守ったまま）
+- 前提（崩れたら見直す）：`src/proxy.ts` の `matcher` から外した場所（`/api/auth/`、`/_next/static/`、`/_next/image`、`/favicon.ico`、上のマニフェストとアイコン）は守られない。アイコンの大きさを足す・変えたら、`src/app/icon.tsx` の id と `matcher` を合わせる。マニフェストとアイコンに、ノートの情報を入れない。ノートの画像などを足すときも、`matcher` から外さない。ページの中に、ログインを飛ばす入口を作らない
+- 当てはまる場所：`src/proxy.ts`、`src/lib/access.ts`、`src/app/` のすべてのページ、`src/app/manifest.ts`・`icon.tsx`・`apple-icon.tsx`
 
 ### 見つからないノートは、Proxy で 404 にする
 - 理由：Cache Components では、ページの枠を先に送った時点でステータスが 200 に決まり、ページの中の `notFound()` では 404 にできない。ページより前の `src/proxy.ts` で、`/notes/` の下の URL がノートの一覧にあるか確かめ、なければ同じ URL のまま `status: 404` で組み立てる（画面はページの `not-found.tsx` のまま）

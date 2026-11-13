@@ -19,7 +19,11 @@ export default auth((req) => {
 });
 
 export const config = {
-  // Auth.js の入口（Google から戻る先など）と、Next.js の静的ファイルだけを通す。
+  // Auth.js の入口（Google から戻る先など）と、Next.js の静的ファイルと、ホーム画面に追加するときにブラウザが
+  // Cookie を付けずに読むもの（マニフェストとアイコン。src/app/manifest.ts・icon.tsx・apple-icon.tsx）だけを通す。
+  // マニフェストとアイコンは決まった URL だけを外す（末尾の $ を外すと、その下の URL まで守られなくなる）。
   // ノートの画像（/files/）は外さない（docs/design.md の「画像を返す入口は、コンテンツフォルダの中の画像だけを返す」）
-  matcher: ["/((?!api/auth/|_next/static/|_next/image|favicon\\.ico$).*)"],
+  matcher: [
+    "/((?!api/auth/|_next/static/|_next/image|favicon\\.ico$|manifest\\.webmanifest$|icon/(?:192|512)$|apple-icon$).*)",
+  ],
 };

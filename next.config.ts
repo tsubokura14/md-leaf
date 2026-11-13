@@ -1,5 +1,8 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import type { NextConfig } from "next";
 import { listNotePaths } from "./src/lib/notes";
+import { extractAppColors } from "./src/lib/token-colors";
 
 const nextConfig: NextConfig = {
   // 画面を動かすテストで、テスト用のコンテンツフォルダごとに出力先を分ける（playwright.config.ts）
@@ -23,8 +26,16 @@ const nextConfig: NextConfig = {
   },
 };
 
-// docs/design.md の「見つからないノートは、Proxy で 404 にする」。ビルドのときのノートのパスを Proxy に埋め込む
+// docs/design.md の「見つからないノートは、Proxy で 404 にする」。ビルドのときのノートのパスを Proxy に埋め込む。
+// トークンの色も埋め込む（docs/design.md「トークンにない値を書かない」。src/lib/token-colors.ts）
 export default async function config(): Promise<NextConfig> {
   const notePaths = (await listNotePaths()).map((segments) => segments.join("/"));
-  return { ...nextConfig, env: { NOTE_PATHS: JSON.stringify(notePaths) } };
+  const tokens = await readFile(join(process.cwd(), "src/styles/tokens.css"), "utf8");
+  return {
+    ...nextConfig,
+    env: {
+      NOTE_PATHS: JSON.stringify(notePaths),
+      APP_COLORS: JSON.stringify(extractAppColors(tokens)),
+    },
+  };
 }
