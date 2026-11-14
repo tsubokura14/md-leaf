@@ -1,16 +1,21 @@
 // `npm run build` の最初に、コンテンツフォルダを用意して検査する。失敗したら exit 1 で終え、next build に進ませない。
 // 流れの理由は docs/design.md の「ノートはビルドの最初に保管庫から取ってくる」
 import { spawnSync } from "node:child_process";
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, renameSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import nextEnv from "@next/env";
 import { runCheck } from "./check-content.mjs";
 
 const CONTENT = "content";
+// 保管庫を取る一時のフォルダと、保管庫の中のコンテンツフォルダ。
+// 保管庫を丸ごと content/ にせず notes/ だけを移すのは、notes/ の外（README.md・.claude/ など）を
+// 読まず・検査せず・サーバーの出力に入れないため。content/ に移せば、出力の追跡と Proxy の作りを変えずに済む
+const VAULT_DIR = ".vault";
+const VAULT_NOTES = "notes";
 
 /**
- * 保管庫を cwd の content/ に取る
+ * 保管庫を cwd の .vault/ に取り、その中の notes/ を content/ に移す
  * @returns {boolean} 取れたか
  */
 function fetchVault({ env, cwd, run, log, error }) {
@@ -24,10 +29,12 @@ function fetchVault({ env, cwd, run, log, error }) {
     return false;
   }
 
-  const target = join(cwd, CONTENT);
-  // ビルドのキャッシュなどに前の content/ が残っていても、保管庫の今の中身だけにする
+  const content = join(cwd, CONTENT);
+  const target = join(cwd, VAULT_DIR);
+  // ビルドのキャッシュなどに前の content/・.vault/ が残っていても、保管庫の今の中身だけにする
+  rmSync(content, { recursive: true, force: true });
   rmSync(target, { recursive: true, force: true });
-  log(`保管庫 ${repo} を ${CONTENT}/ に取ります`);
+  log(`保管庫 ${repo} を取り、${VAULT_NOTES}/ を ${CONTENT}/ にします`);
   // 鍵は URL にも引数にも入れない（ログ・プロセスの一覧・.git/config に残さないため）。
   // GIT_CONFIG_* の環境変数で、github.com への通信にだけ Basic の認証のヘッダーを付ける（actions/checkout と同じ形）。
   // GIT_TERMINAL_PROMPT=0 で、鍵が効かないときに入力を待たずに失敗させる
@@ -53,13 +60,22 @@ function fetchVault({ env, cwd, run, log, error }) {
     );
     return false;
   }
-  // サーバーの出力（outputFileTracingIncludes の content/**）に履歴を入れないため
-  rmSync(join(target, ".git"), { recursive: true, force: true });
+  const notes = join(target, VAULT_NOTES);
+  const found = existsSync(notes);
+  // .git は notes/ の外にあるので、移したあとに一時のフォルダごと消せば、出力に履歴も入らない
+  if (found) renameSync(notes, content);
+  rmSync(target, { recursive: true, force: true });
+  if (!found) {
+    error(
+      `保管庫に ${VAULT_NOTES}/ フォルダがありません（${repo}。コンテンツは notes/ の下に置く。docs/content-rules.md）`,
+    );
+    return false;
+  }
   return true;
 }
 
 /**
- * Vercel のビルドなら保管庫を content/ に取り、どこでもコンテンツフォルダを検査する
+ * Vercel のビルドなら保管庫の notes/ を content/ に取り、どこでもコンテンツフォルダを検査する
  * @param {{
  *   env: Record<string, string | undefined>,
  *   cwd: string,

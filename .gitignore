@@ -36,3 +36,6 @@ test-results/
 
 # ノート（正本は保管庫。Vercel のビルドで scripts/prepare-content.mjs が取ってくる先）
 /content/
+
+# 本番のビルドで保管庫を取る一時のフォルダ（scripts/prepare-content.mjs）
+/.vault/
