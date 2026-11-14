@@ -29,7 +29,8 @@ AGENTS.md と CLAUDE.md はテンプレートのものなので、このプロ�
 | --- | --- |
 | `npm run dev` | 開発サーバー（http://localhost:3000） |
 | `npm test` | 単体・部品のテストを一度だけ実行する。ファイルを絞るときは `npm test -- <パス>` |
-| `npm run lint` | Lint（ESLint と、トークンにない CSS の値の検査 `scripts/check-tokens.mjs`） |
+| `npm run lint` | Lint（ESLint と、トークンにない CSS の値の検査 `scripts/check-tokens.mjs`、`content/` の検査 `scripts/check-content.mjs`） |
+| `npm run check:content` | `content/` が決まり（`docs/content-rules.md`）に合うかだけを検査する。合わないものを一覧にして失敗で終わる |
 | `npm run typecheck` | 型チェック（ルートの型を作ってから `tsc --noEmit`） |
 | `npm run test:visual` | 画像を比べるテスト（Docker の中で `next build` して Playwright）。基準と違えば失敗し、`playwright-report/` に基準・今回・差分が残る。絞るときは `npm run test:visual -- <パス>` |
 | `npm run screenshots` | 画面の画像を撮り直す（Docker）。違うものとないものを `docs/specs/screens/` に書き出す。撮る画面を絞るときは `npm run screenshots -- <パス>` |

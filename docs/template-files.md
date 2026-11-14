@@ -72,6 +72,13 @@
 | `docs/design.md` | 今の設計 |
 | `docs/ui.md` | 見た目の決まり |
 
+次のファイルは、テンプレートのものの場所（`.claude/agents/`・`.claude/skills/`）にあるが、このプロジェクトで足したもので、テンプレートにはない。プロジェクトのものとして扱い、集める・取り込むの対象にしない（`:(exclude)<パス>` で外す）。
+
+| パス | 中身 |
+| --- | --- |
+| `.claude/agents/content-reviewer.md` | `content/` の教材の中身を精査するサブエージェント（`docs/content-rules.md`） |
+| `.claude/skills/content-review/` | 精査のコマンド `/content-review` |
+
 ## テンプレートとのつながり
 
 使う側のリポジトリは、GitHub の「Use this template」で作る。テンプレートとは別の履歴から始まるので、どの版から作ったか・どの版まで取り込んだかを `.template-version` に記録し、差分はいつもこの版を起点に取る。

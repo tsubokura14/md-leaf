@@ -77,3 +77,10 @@
 - 理由：ファイルを返す入口は、作りを間違えると、コンテンツフォルダの外やノート以外のファイル（`.env` など）を読ませる穴になる。集めた一覧の中だけを探せば、`..` などを書かれても外は読めない。svg は直接開くとスクリプトが動きうるので、`Content-Security-Policy: sandbox` を付けて返す
 - 前提（崩れたら見直す）：ログインの確かめは `src/proxy.ts` に任せている。`matcher` から `/files/` を外すと、ログインしていなくても画像が見える。画像の種類を足すときは `src/lib/note-files.ts` だけを直す。ノートを置く場所を変えたら、`outputFileTracingIncludes` も合わせる（「`content/` をサーバーの出力に入れる」）
 - 当てはまる場所：`src/app/files/[...path]/route.ts`、`src/lib/notes.ts` の `readContentFile`、`src/lib/note-files.ts`、`src/lib/note-images.ts`、`src/proxy.ts` の `matcher`
+
+### `content/` には決まりに合うものだけを置く
+- 置いてよいのは、ノート（`.md`）と、アプリが表示できる画像（`src/lib/note-files.ts` と同じ種類）だけ。名前が「.」で始まるものは置かない。名前と並び・書き方の決まりは `docs/content-rules.md`
+- `scripts/check-content.mjs` が `content/` を検査し、`npm run lint` の中で走らせて、合わないものがあれば CI で失敗にする（単独では `npm run check:content`）
+- 理由：アプリは「.」で始まるものと対象外のファイルを読まないので、置いても表示されず、教材を作るときの作業ファイルが紛れ込むだけになる。リンク切れはビルドでは警告だけで止まらないので、検査で止める
+- 前提（崩れたら見直す）：検査はアプリの読み方（`src/lib/notes.ts` が「.」で始まるものを飛ばす、`src/lib/note-files.ts` の画像の種類）を `.mjs` に書き写している。これらを変えたら、検査も合わせる。検査するのは `content/` だけで、`e2e/fixtures/` のテスト用のフォルダは対象にしない
+- 当てはまる場所：`content/`、`scripts/check-content.mjs`、`package.json` の `lint`・`check:content`、`src/lib/notes.ts`・`note-files.ts`・`note-links.ts`・`note-images.ts`
