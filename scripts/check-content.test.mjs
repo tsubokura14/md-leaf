@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { checkContent, RULES } from "./check-content.mjs";
+import { checkContent, RULES, runCheck } from "./check-content.mjs";
 
 const dirs = [];
 
@@ -48,17 +48,15 @@ describe("checkContent", () => {
   });
 
   describe("置いてよいもの", () => {
-    it("「.」で始まるフォルダは、中を見ずに1つだけ見つける", () => {
+    it("「.」で始まるファイル・フォルダは、どの階層でも中を見ずに飛ばす", () => {
       expect(
         check({
-          "Docker 入門/.claude/construction-plan.md": "計画",
-          "Docker 入門/.claude/memo.txt": "メモ",
+          ".gitignore": "content/",
+          ".obsidian/app.json": "{}",
+          "Docker 入門/.claude/construction-plan.md": "[[計画]]",
+          "Docker 入門/図/.DS_Store": "",
         }),
-      ).toEqual([{ file: "Docker 入門/.claude", rule: RULES.hidden }]);
-    });
-
-    it("「.」で始まるファイルを見つける", () => {
-      expect(check({ ".gitkeep": "" })).toEqual([{ file: ".gitkeep", rule: RULES.hidden }]);
+      ).toEqual([]);
     });
 
     it("ノートと画像以外のファイルを見つける", () => {
@@ -220,5 +218,51 @@ describe("checkContent", () => {
     it("コードブロック・インラインコード・数式の中の [[ ]] は見つけない", () => {
       expect(withBody("```\na = [[1]]\n```\n\n`b = [[2]]`\n\n$$\n[[x]]\n$$")).toEqual([]);
     });
+  });
+});
+
+describe("runCheck", () => {
+  // 出した行を集めて、終わりのコードと一緒に返す
+  function run({ args = [], env = {}, cwd = tmpdir() } = {}) {
+    const lines = [];
+    const code = runCheck({ args, env, cwd, error: (line) => lines.push(line) });
+    return { code, lines };
+  }
+
+  const broken = () => makeContent({ ...validContent(), "Docker 入門/00_ガイド.md": null });
+
+  it("引数のフォルダを検査し、合わないものを <フォルダ>/<ファイル> の形で出して 1 を返す", () => {
+    const { code, lines } = run({ args: [broken()], env: { CONTENT_DIR: "ない" } });
+    expect(code).toBe(1);
+    expect(lines.slice(1)).toEqual([`  ${dirs.at(-1)}/Docker 入門  ${RULES.noGuide}`]);
+  });
+
+  it("引数がなければ CONTENT_DIR を検査する", () => {
+    const dir = broken();
+    expect(run({ env: { CONTENT_DIR: `${dir}/` } }).lines.slice(1)).toEqual([
+      `  ${dir}/Docker 入門  ${RULES.noGuide}`,
+    ]);
+  });
+
+  it("引数も CONTENT_DIR もなければ、cwd の content/ を検査する", () => {
+    const cwd = mkdtempSync(join(tmpdir(), "check-content-cwd-"));
+    dirs.push(cwd);
+    mkdirSync(join(cwd, "content"));
+    writeFileSync(join(cwd, "content", "メモ.txt"), "");
+    expect(run({ cwd }).lines.slice(1)).toEqual([
+      `  content/index.md  ${RULES.noHome}`,
+      `  content/メモ.txt  ${RULES.fileType}`,
+    ]);
+  });
+
+  it("合うフォルダなら、何も出さずに 0 を返す", () => {
+    expect(run({ args: [makeContent(validContent())] })).toEqual({ code: 0, lines: [] });
+  });
+
+  it("フォルダがなければ、そう出して 1 を返す", () => {
+    const missing = join(tmpdir(), "check-content-ない");
+    const { code, lines } = run({ args: [missing] });
+    expect(code).toBe(1);
+    expect(lines).toEqual([`${missing} がありません`]);
   });
 });

@@ -25,7 +25,10 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run lint
+      # テスト用のノートを指す理由は docs/design.md の「ノートはビルドの最初に保管庫から取ってくる」
       - run: npm run typecheck
+        env:
+          CONTENT_DIR: e2e/fixtures/content
 
   visual:
     name: 画像を比べるテスト

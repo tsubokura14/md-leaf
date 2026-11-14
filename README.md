@@ -6,7 +6,7 @@
 
 # md-leaf
 
-PC の Obsidian で書いた Markdown のノートを、スマホでも読みやすく見られるようにする、自分専用の閲覧アプリ。ノートはこのリポジトリに置き、狭い画面でも読みやすく表示する。
+PC の Obsidian で書いた Markdown のノートを、スマホでも読みやすく見られるようにする、自分専用の閲覧アプリ。ノートは学習用の保管庫（別の非公開のリポジトリ）に置き、ビルドのときに読んで、狭い画面でも読みやすく表示する。
 
 本番は Vercel で動かす。デプロイの手順は「[本番（Vercel）へのデプロイ](#本番vercelへのデプロイ)」にある。
 
@@ -21,6 +21,7 @@ PC の Obsidian で書いた Markdown のノートを、スマホでも読みや
 - ライトとダークを切り替えられる
 - 本文の文字の大きさを 14px・16px から選べる（標準は 16px。端末ごとに覚えておく）
 - ログアウトできる（ノートの一覧のいちばん下から）
+- 保管庫の main に push すると、数分で本番に反映される（保管庫が決まりに合わないときは、本番は前の版のまま）
 
 詳しい動きは [docs/specs/](docs/specs/) にある。
 
@@ -29,7 +30,7 @@ PC の Obsidian で書いた Markdown のノートを、スマホでも読みや
 - Next.js（App Router）＋ TypeScript
 - Tailwind CSS（UI の部品ライブラリは使わない）
 - 認証：Auth.js ＋ Google ログイン
-- ノートの置き場所：このリポジトリの `content/`。ビルドのときに HTML にする
+- ノートの置き場所：学習用の保管庫（別の非公開のリポジトリ）。Vercel のビルドの最初に取ってきて検査し、HTML にする（[docs/vault.md](docs/vault.md)）
 - データベース：使わない
 - テスト：Vitest ＋ Testing Library、画像を比べるテストは Playwright
 - デプロイ先：Vercel（Hobby）
@@ -42,6 +43,7 @@ PC の Obsidian で書いた Markdown のノートを、スマホでも読みや
 
 - Node.js 24
 - Docker Desktop（画像を比べるテストと、画面の撮り直しに使う）
+- 学習用の保管庫を手元に clone したフォルダ（ノートはこのリポジトリにはない。なければテスト用のノート `e2e/fixtures/content` でも動く）
 
 ### 手順
 
@@ -49,6 +51,11 @@ PC の Obsidian で書いた Markdown のノートを、スマホでも読みや
 git clone https://github.com/tsubokura14/md-leaf.git
 cd md-leaf
 npm install
+```
+
+`.env.example` を `.env.local` にコピーし、`CONTENT_DIR` に手元の保管庫のフォルダを書く（例：`CONTENT_DIR=../learning-vault`）。`npm run dev`・`npm run build`・`npm run typecheck` は、このフォルダのノートを読む。書かないと、コンテンツフォルダがないと出て止まる。ログインの値は下の「環境変数」。
+
+```bash
 npm run dev
 ```
 
@@ -56,7 +63,7 @@ http://localhost:3000 で開く。
 
 ### 環境変数
 
-ログインに、次の環境変数を使う。値はリポジトリに書かない（コード・文書・コミットのどこにも書かない）。
+次の環境変数を使う。秘密の値はリポジトリに書かない（コード・文書・コミットのどこにも書かない）。
 
 | 名前 | 内容 |
 | --- | --- |
@@ -64,6 +71,9 @@ http://localhost:3000 で開く。
 | `AUTH_GOOGLE_ID` | Google Cloud で作った OAuth のクライアントの ID |
 | `AUTH_GOOGLE_SECRET` | 同じクライアントの秘密の値 |
 | `ALLOWED_EMAILS` | ログインを許可するメールアドレス。カンマ区切りで、大文字・小文字は区別しない。空ならだれもログインできない |
+| `CONTENT_DIR` | 手元だけ。ノートを読むフォルダ（手元の保管庫）。Vercel には置かない |
+| `VAULT_REPO` | Vercel だけ。保管庫のリポジトリ（`<持ち主>/<リポジトリ名>`） |
+| `VAULT_TOKEN` | Vercel だけ。保管庫を読むだけの鍵（fine-grained のトークン） |
 
 手元では、`.env.example` を `.env.local` にコピーして値を入れる（`.env.local` はコミットしない）。手元でログインするには、下の「Google のログインの設定」で、リダイレクト URI に `http://localhost:3000/api/auth/callback/google` を登録しておく。
 
@@ -98,14 +108,21 @@ Vercel のプロジェクトの「Settings」→「Environment Variables」で�
 | `AUTH_GOOGLE_ID` | Production と Preview |
 | `AUTH_GOOGLE_SECRET` | Production と Preview |
 | `ALLOWED_EMAILS` | Production だけ |
+| `VAULT_REPO` | Production と Preview |
+| `VAULT_TOKEN` | Production と Preview |
 
 - `AUTH_SECRET`・`AUTH_GOOGLE_ID`・`AUTH_GOOGLE_SECRET` を Preview にも置くのは、プレビューでもログインの画面が出るようにするため
 - `ALLOWED_EMAILS` は Production にだけ置く。Preview に置かないので、プレビューではだれもログインできない
+- `VAULT_REPO`・`VAULT_TOKEN` の作り方は、下の「4. 保管庫とつなぐ」
 - 許可するアドレスを足すときは、`ALLOWED_EMAILS` を変えて再デプロイする。外したアドレスは、次に開いたときに締め出される
 
-### 4. デプロイして確かめる
+### 4. 保管庫とつなぐ
 
-1. 環境変数を設定したら、Vercel で本番を再デプロイする（以後は main に入るたびに本番へ反映される）
+ノートは学習用の保管庫から、ビルドのたびに取ってくる。保管庫を読むだけの鍵（`VAULT_TOKEN`）の作り方、保管庫の push からビルドを始める Deploy Hook の設定の手順は [docs/vault.md](docs/vault.md) にある。この設定をしないと、Vercel のビルドは失敗する。
+
+### 5. デプロイして確かめる
+
+1. 環境変数を設定したら、Vercel で本番を再デプロイする（以後は、このリポジトリの main に入るたびと、保管庫の main に push するたびに本番へ反映される）
 2. 本番の URL を開き、許可したアカウントでログインできること、許可していないアカウントでは入れないことを確かめる
 3. 手元（`npm run dev`）でもログインできることを確かめる
 4. PR のプレビューの URL では、ログインの画面までしか見られないことを確かめる
@@ -117,6 +134,7 @@ Vercel のプロジェクトの「Settings」→「Environment Variables」で�
 | `npm run dev` | 開発サーバーを起動 |
 | `npm test` | 単体・部品のテストを実行 |
 | `npm run lint` | Lint |
+| `npm run check:content -- <フォルダ>` | 保管庫が決まり（[docs/content-rules.md](docs/content-rules.md)）に合うかを検査 |
 | `npm run typecheck` | 型チェック |
 | `npm run test:visual` | 画像を比べるテスト（Docker） |
 | `npm run screenshots` | 画面の画像を撮り直す（Docker） |
@@ -137,6 +155,8 @@ Vercel のプロジェクトの「Settings」→「Environment Variables」で�
 | [docs/overview.md](docs/overview.md) | 目的、やらないこと、技術、用語 |
 | [docs/specs/](docs/specs/) | アプリが今どう動くか、今の画面 |
 | [docs/design.md](docs/design.md) | アプリが今どう作られているか（複数の場所に関わる決まりと、その理由） |
+| [docs/vault.md](docs/vault.md) | 学習用の保管庫とつなぐ手順（鍵・Deploy Hook）と、鍵が切れたときの直し方 |
+| [docs/content-rules.md](docs/content-rules.md) | 保管庫に教材を置くときの決まりと、足し方・検査・精査 |
 | [docs/ui.md](docs/ui.md) | 見た目の決まり（色・余白・文字・部品の使い分け） |
 | [docs/changes/](docs/changes/) | 機能ごとの変更の記録（何を・なぜ・どう変えたか） |
 | [docs/libraries/](docs/libraries/) | コードを読むために必要なライブラリの前提知識 |

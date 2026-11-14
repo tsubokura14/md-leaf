@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/prepare-content.mjs && next build",
     "start": "next start",
     "test": "vitest run",
-    "lint": "eslint && node scripts/check-tokens.mjs && node scripts/check-content.mjs",
+    "lint": "eslint && node scripts/check-tokens.mjs",
     "check:content": "node scripts/check-content.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "test:visual": "node scripts/playwright-docker.mjs --update-snapshots=none",

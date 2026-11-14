@@ -19,10 +19,10 @@
 | `src/app/globals.css` | Tailwind とトークンの読み込みと、`dark` の変形の定義（`<html>` の `.dark` に合わせる。`src/components/theme.ts`）、`reading` の変形の定義（本文の `.reading` があるページだけ。`src/components/font-size-menu.tsx`）、`toc` の変形の定義（見出しのある本文のページだけ。`src/components/toc.tsx`）だけ。値は書かない |
 | `src/components/note-body.css` | ノートの本文（Markdown から作った HTML）の見た目。HTML にクラスを付けられないので、`.note-body` の下の要素の選び方で書き、値はトークンの `var()` だけを使う |
 | `src/components/toc.css` | 目次の高さなど、Tailwind のトークンのクラスだけでは書けない値（画面の高さからの引き算）。値はトークンの `var()` だけを使う |
-| `content/` | ノート。この中の構成がそのままノートの一覧になる |
+| `content/` | Vercel のビルドで保管庫から取ってくるノートの置き場所（リポジトリには入れない。`.gitignore`）。この中の構成がそのままノートの一覧になる |
 | `*.test.ts(x)`・`*.test.mjs` | 単体・部品のテスト（Vitest）。テストするファイルの隣に置く（`src/`・`scripts/`・`.claude/hooks/`）。`src/` の `.tsx` は jsdom、それ以外は Node で動く |
 | `e2e/` | 画面を動かすテストと、画面の画像を比べるテスト（Playwright） |
-| `scripts/` | 開発用のスクリプト（画像を撮る Docker の起動、トークンにない値の検査） |
+| `scripts/` | 開発とビルドのスクリプト（画像を撮る Docker の起動、トークンにない値の検査、コンテンツフォルダの検査、ビルドの前の保管庫の取得） |
 | `.claude/hooks/format-on-edit.mjs` | AI が編集したファイルだけを整形するフック |
 
 - 理由：ノートの変換（`src/lib/`）は条件の分かれ道が多く、テストを書く中心になる。React から切り離しておくと、画面を通さずにテストできる
@@ -30,7 +30,7 @@
 
 ## データ
 
-- 保存するデータはない（データベースを使わない）。ノートはリポジトリの `content/` に置く
+- 保存するデータはない（データベースを使わない）。ノートの正本は学習用の保管庫（アプリとは別の非公開のリポジトリ）に置き、ビルドのときに読む（「ノートはビルドの最初に保管庫から取ってくる」）
 
 ## どこでも守る決まり
 
@@ -52,10 +52,19 @@
 - 前提（崩れたら見直す）：ノートを読む場所は環境変数 `CONTENT_DIR`（既定 `content/`）で変えられる。ノートはビルドのときに読むので、同じサーバーでは中身を差し替えられない。実行のたびに読む作りに変えたら、サーバーを1つにまとめられる。セッションは Auth.js の JWT の Cookie（`authjs.session-token`。Cookie の名前を salt に使う）。データベースのセッションに変えたり、Auth.js の版で Cookie の作り方が変わったら、`e2e/session.ts` を直す
 - 当てはまる場所：`src/lib/notes.ts` のノートの読み込み、`playwright.config.ts` のサーバーの起動、`next.config.ts` の `distDir`、`e2e/fixtures/`、`e2e/session.ts`・`e2e/test-env.ts`
 
+### ノートはビルドの最初に保管庫から取ってくる
+- ノートの正本は、学習用の保管庫（別の非公開のリポジトリ）1つだけ。アプリのリポジトリには `content/` を置かない（`.gitignore` の `/content/`）
+- `npm run build` は `node scripts/prepare-content.mjs && next build`。`scripts/prepare-content.mjs` は、Vercel のビルド（環境変数 `VERCEL` がある）でだけ、保管庫（`VAULT_REPO`）を読むだけの鍵（`VAULT_TOKEN`）で `content/` に取り、`.git` を消す。そのあと、どこでもコンテンツフォルダを検査する（「保管庫には決まりに合うものだけを置く」）。取れない・検査に通らないときは exit 1 で、`next build` に進まない
+- 保管庫の main に push すると、保管庫の GitHub Actions が Vercel の Deploy Hook を呼び、本番のビルドが始まる（つなぐ手順は `docs/vault.md`）
+- 手元では取らない。`.env.local` の `CONTENT_DIR` で手元の保管庫のフォルダを指す。コンテンツフォルダがなければ、`next.config.ts` と `scripts/prepare-content.mjs` が `CONTENT_DIR` を案内して止まる
+- 理由：保管庫へ push するだけで反映させ、教材の更新をアプリのリポジトリの履歴に混ぜないため。取ってくる先を `content/` にすると、サーバーの出力（「`content/` をサーバーの出力に入れる」）と Proxy の 404 の作りを変えずに済む。Vercel で取れないとき・検査に通らないときに `next build` へ進まなければ、本番は前の版のまま残り、Vercel の標準のメールで失敗が届く（ノートが0件や壊れたリンクのアプリを本番に出さない）
+- 前提（崩れたら見直す）：Vercel のビルドのコマンドは `npm run build` のまま。CI と画面のテスト（`playwright.config.ts`）は `npx next build` を直接呼び、`e2e/fixtures/` のノートで動くので、保管庫を読まない。CI の型チェック（`next typegen` が `next.config.ts` を読む）には `CONTENT_DIR: e2e/fixtures/content` を渡す。取る先・鍵の渡し方・`VERCEL` での見分け方を変えたら、`scripts/prepare-content.mjs` と `docs/vault.md` を合わせる
+- 当てはまる場所：`scripts/prepare-content.mjs`、`package.json` の `build`、`next.config.ts` のコンテンツフォルダがないときの止め方、`.gitignore`、`.env.example`、`.github/workflows/ci.yml` の `check`、`docs/vault.md`
+
 ### `content/` をサーバーの出力に入れる
-- 理由：一覧にない URL（見つからないノート）は開いたときに組み立て、そのときにノートを読むので、本番でも `content/` が要る。フォルダの中を読む処理はビルドに追跡されないので、`next.config.ts` の `outputFileTracingIncludes` で入れる。ノートの一覧はレイアウトで読むので、ログインの画面以外のすべてのページに要る
+- 理由：一覧にない URL（見つからないノート）は開いたときに組み立て、そのときにノートを読むので、本番でも `content/`（Vercel のビルドで保管庫から取ったもの）が要る。フォルダの中を読む処理はビルドに追跡されないので、`next.config.ts` の `outputFileTracingIncludes` で入れる。ノートの一覧はレイアウトで読むので、ログインの画面以外のすべてのページに要る
 - 既定の `content/` は `join(process.cwd(), "content")` と決まった場所で書き、`CONTENT_DIR` は追跡から外す（`turbopackIgnore`）。外さないと、場所が決まらないためにプロジェクト全体が出力に入る
-- 前提（崩れたら見直す）：`CONTENT_DIR` は画面のテストのときだけ使い、本番では設定しない。`outputFileTracingIncludes` のキーは途中まで合えば当てはまるので、ほかのページにも入るが、ノートだけなので構わない。ノートを置く場所を変えたら、両方を合わせる
+- 前提（崩れたら見直す）：`CONTENT_DIR` は手元（手元の保管庫を指す）と画面のテスト・CI（`e2e/fixtures/` を指す）だけで使い、Vercel では設定しない。`outputFileTracingIncludes` のキーは途中まで合えば当てはまるので、ほかのページにも入るが、ノートだけなので構わない。ノートを置く場所を変えたら、両方を合わせる
 - 当てはまる場所：`src/lib/notes.ts` の `contentDir`、`next.config.ts` の `outputFileTracingIncludes`
 
 ### ログインしていなければ、ログインの画面以外を出さない
@@ -78,9 +87,9 @@
 - 前提（崩れたら見直す）：ログインの確かめは `src/proxy.ts` に任せている。`matcher` から `/files/` を外すと、ログインしていなくても画像が見える。画像の種類を足すときは `src/lib/note-files.ts` だけを直す。ノートを置く場所を変えたら、`outputFileTracingIncludes` も合わせる（「`content/` をサーバーの出力に入れる」）
 - 当てはまる場所：`src/app/files/[...path]/route.ts`、`src/lib/notes.ts` の `readContentFile`、`src/lib/note-files.ts`、`src/lib/note-images.ts`、`src/proxy.ts` の `matcher`
 
-### `content/` には決まりに合うものだけを置く
-- 置いてよいのは、ノート（`.md`）と、アプリが表示できる画像（`src/lib/note-files.ts` と同じ種類）だけ。名前が「.」で始まるものは置かない。名前と並び・書き方の決まりは `docs/content-rules.md`
-- `scripts/check-content.mjs` が `content/` を検査し、`npm run lint` の中で走らせて、合わないものがあれば CI で失敗にする（単独では `npm run check:content`）
-- 理由：アプリは「.」で始まるものと対象外のファイルを読まないので、置いても表示されず、教材を作るときの作業ファイルが紛れ込むだけになる。リンク切れはビルドでは警告だけで止まらないので、検査で止める
-- 前提（崩れたら見直す）：検査はアプリの読み方（`src/lib/notes.ts` が「.」で始まるものを飛ばす、`src/lib/note-files.ts` の画像の種類）を `.mjs` に書き写している。これらを変えたら、検査も合わせる。検査するのは `content/` だけで、`e2e/fixtures/` のテスト用のフォルダは対象にしない
-- 当てはまる場所：`content/`、`scripts/check-content.mjs`、`package.json` の `lint`・`check:content`、`src/lib/notes.ts`・`note-files.ts`・`note-links.ts`・`note-images.ts`
+### 保管庫には決まりに合うものだけを置く
+- 置いてよいのは、ノート（`.md`）と、アプリが表示できる画像（`src/lib/note-files.ts` と同じ種類）だけ。名前が「.」で始まるもの（`.obsidian/`・`.github/`・`.gitignore`・`.claude/` など）は、どの階層でも検査で飛ばし（中も見ない）、合わないものにしない。名前と並び・書き方の決まりは `docs/content-rules.md`
+- `scripts/check-content.mjs` がコンテンツフォルダを検査する。ビルドの最初に `scripts/prepare-content.mjs` が流し（「ノートはビルドの最初に保管庫から取ってくる」）、合わないものがあればビルドを失敗にする。手元では `npm run check:content -- <保管庫のフォルダ>`（引数がなければ `CONTENT_DIR`、それもなければ `content/`）。`npm run lint` では流さない（アプリのリポジトリに `content/` がないため）
+- 理由：アプリは対象外のファイルを読まないので、置いても表示されず、教材を作るときの作業ファイルが紛れ込むだけになる。「.」で始まるものはアプリがもともと読まず、保管庫には Obsidian・Git・作業の設定（`.obsidian/` など）が要るので飛ばす。リンク切れは `next build` では警告だけで止まらないので、検査で止める。検査をビルドの中で流すので、検査とアプリの版がいつも一致する
+- 前提（崩れたら見直す）：検査はアプリの読み方（`src/lib/notes.ts` が「.」で始まるものを飛ばす、`src/lib/note-files.ts` の画像の種類）を `.mjs` に書き写している。これらを変えたら、検査も合わせる。`e2e/fixtures/` のテスト用のフォルダは検査しない（画面のテストは `npx next build` を直接呼ぶ）
+- 当てはまる場所：保管庫、`scripts/check-content.mjs`、`scripts/prepare-content.mjs`、`package.json` の `build`・`check:content`、`src/lib/notes.ts`・`note-files.ts`・`note-links.ts`・`note-images.ts`

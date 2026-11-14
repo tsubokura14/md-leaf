@@ -33,3 +33,6 @@ Thumbs.db
 # Playwright
 playwright-report/
 test-results/
+
+# ノート（正本は保管庫。Vercel のビルドで scripts/prepare-content.mjs が取ってくる先）
+/content/

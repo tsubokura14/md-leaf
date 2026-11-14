@@ -76,7 +76,7 @@
 
 | パス | 中身 |
 | --- | --- |
-| `.claude/agents/content-reviewer.md` | `content/` の教材の中身を精査するサブエージェント（`docs/content-rules.md`） |
+| `.claude/agents/content-reviewer.md` | コンテンツフォルダ（保管庫）の教材の中身を精査するサブエージェント（`docs/content-rules.md`） |
 | `.claude/skills/content-review/` | 精査のコマンド `/content-review` |
 
 ## テンプレートとのつながり

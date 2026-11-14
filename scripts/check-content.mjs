@@ -1,8 +1,8 @@
-// content/ が docs/content-rules.md の決まりに合うかを検査する。
-// `npm run check:content` と `npm run lint` から呼ぶ。合わないものがあれば一覧を出して exit 1 で終える。
-// 決まりの理由は docs/design.md の「content/ には決まりに合うものだけを置く」
-import { readdirSync, readFileSync } from "node:fs";
-import { join, posix } from "node:path";
+// コンテンツフォルダが docs/content-rules.md の決まりに合うかを検査する。
+// `npm run check:content -- <フォルダ>` から呼ぶ。合わないものがあれば一覧を出して exit 1 で終える。
+// 決まりの理由は docs/design.md の「保管庫には決まりに合うものだけを置く」
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
@@ -12,7 +12,6 @@ import { unified } from "unified";
 import { parse as parseYaml } from "yaml";
 
 export const RULES = {
-  hidden: "名前が「.」で始まるファイル・フォルダは置かない",
   fileType: "ノート（.md）と画像（png・jpg・jpeg・gif・webp・svg）以外は置かない",
   topLevel: "一番上には index.md と教材のフォルダだけを置く",
   noHome: "一番上にホームの index.md を置く",
@@ -32,7 +31,7 @@ export const RULES = {
 const HOME_FILE = "index.md";
 const GUIDE_FILE = "00_ガイド.md";
 const NOTE_EXTENSION = ".md";
-// docs/design.md の「`content/` には決まりに合うものだけを置く」
+// docs/design.md の「保管庫には決まりに合うものだけを置く」
 const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp", "svg"]);
 const CHAPTER = /^(\d{2})_.+\.md$/;
 const SCHEME = /^[a-z][a-z\d+.-]*:/i;
@@ -55,7 +54,7 @@ function childPath(parent, name) {
 }
 
 /**
- * フォルダの中を集める。「.」で始まるものと、ノート・画像以外は problems に入れ、中は見ない
+ * フォルダの中を集める。「.」で始まるものは飛ばし、ノート・画像以外は problems に入れる。どちらも中は見ない
  * @returns {{ name: string, path: string, isDir: boolean }[]} 名前の順
  */
 function listEntries(root, path, problems) {
@@ -69,10 +68,7 @@ function listEntries(root, path, problems) {
     }))
     .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   return entries.filter((entry) => {
-    if (entry.name.startsWith(".")) {
-      problems.push({ file: entry.path, rule: RULES.hidden });
-      return false;
-    }
+    if (entry.name.startsWith(".")) return false;
     if (!entry.isDir && !isNote(entry.name) && !isImage(entry.name)) {
       problems.push({ file: entry.path, rule: RULES.fileType });
       return false;
@@ -264,16 +260,32 @@ export function checkContent(root) {
   return problems.sort((a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : 0));
 }
 
-function main() {
-  const root = fileURLToPath(new URL("../content", import.meta.url));
-  const problems = checkContent(root);
-  if (problems.length > 0) {
-    console.error("content/ に決まりに合わないものがあります（決まりは docs/content-rules.md）:");
-    for (const { file, rule } of problems) console.error(`  content/${file}  ${rule}`);
-    process.exit(1);
+/**
+ * 引数のフォルダ（なければ CONTENT_DIR、それもなければ content/）を検査し、合わないものを出す
+ * @param {{ args: string[], env: Record<string, string | undefined>, cwd: string, error: (line: string) => void }} options
+ * @returns {number} 終わりのコード。合わないもの・フォルダがなければ 1
+ */
+export function runCheck({ args, env, cwd, error }) {
+  const given = args[0] || env.CONTENT_DIR || "content";
+  // 出すときは指定されたままの書き方にする（末尾の区切りだけ外す）
+  const label = given.replace(/[\\/]+$/, "") || given;
+  const root = resolve(cwd, given);
+  if (!existsSync(root)) {
+    error(`${label} がありません`);
+    return 1;
   }
+  const problems = checkContent(root);
+  if (problems.length === 0) return 0;
+  error(`${label} に決まりに合わないものがあります（決まりは docs/content-rules.md）:`);
+  for (const { file, rule } of problems) error(`  ${label}/${file}  ${rule}`);
+  return 1;
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  main();
+  process.exitCode = runCheck({
+    args: process.argv.slice(2),
+    env: process.env,
+    cwd: process.cwd(),
+    error: (line) => console.error(line),
+  });
 }
