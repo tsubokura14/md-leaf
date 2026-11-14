@@ -54,10 +54,10 @@
 
 ### ノートはビルドの最初に保管庫から取ってくる
 - ノートの正本は、学習用の保管庫（別の非公開のリポジトリ）1つだけ。アプリのリポジトリには `content/` を置かない（`.gitignore` の `/content/`）
-- `npm run build` は `node scripts/prepare-content.mjs && next build`。`scripts/prepare-content.mjs` は、Vercel のビルド（環境変数 `VERCEL` がある）でだけ、保管庫（`VAULT_REPO`）を読むだけの鍵（`VAULT_TOKEN`）で `content/` に取り、`.git` を消す。そのあと、どこでもコンテンツフォルダを検査する（「保管庫には決まりに合うものだけを置く」）。取れない・検査に通らないときは exit 1 で、`next build` に進まない
+- `npm run build` は `node scripts/prepare-content.mjs && next build`。`scripts/prepare-content.mjs` は、Vercel のビルド（環境変数 `VERCEL` がある）でだけ、保管庫（`VAULT_REPO`）を読むだけの鍵（`VAULT_TOKEN`）で一時のフォルダ `.vault/`（`.gitignore`）に取り、その中の `notes/` だけを `content/` に移して `.vault/` を消す。`notes/` がなければ「保管庫に notes/ フォルダがありません」と出して exit 1。そのあと、どこでもコンテンツフォルダを検査する（「保管庫には決まりに合うものだけを置く」）。取れない・検査に通らないときは exit 1 で、`next build` に進まない
 - 保管庫の main に push すると、保管庫の GitHub Actions が Vercel の Deploy Hook を呼び、本番のビルドが始まる（つなぐ手順は `docs/vault.md`）
-- 手元では取らない。`.env.local` の `CONTENT_DIR` で手元の保管庫のフォルダを指す。コンテンツフォルダがなければ、`next.config.ts` と `scripts/prepare-content.mjs` が `CONTENT_DIR` を案内して止まる
-- 理由：保管庫へ push するだけで反映させ、教材の更新をアプリのリポジトリの履歴に混ぜないため。取ってくる先を `content/` にすると、サーバーの出力（「`content/` をサーバーの出力に入れる」）と Proxy の 404 の作りを変えずに済む。Vercel で取れないとき・検査に通らないときに `next build` へ進まなければ、本番は前の版のまま残り、Vercel の標準のメールで失敗が届く（ノートが0件や壊れたリンクのアプリを本番に出さない）
+- 手元では取らない。`.env.local` の `CONTENT_DIR` で手元の保管庫の `notes/` を指す。コンテンツフォルダがなければ、`next.config.ts` と `scripts/prepare-content.mjs` が `CONTENT_DIR` を案内して止まる
+- 理由：保管庫へ push するだけで反映させ、教材の更新をアプリのリポジトリの履歴に混ぜないため。`notes/` を `content/` に移すと（`CONTENT_DIR=content/notes` にしない）、`notes/` の外（`.claude/` など）をサーバーの出力に入れず、サーバーの出力（「`content/` をサーバーの出力に入れる」）と Proxy の 404 の作りを変えずに済む。Vercel で取れないとき・検査に通らないときに `next build` へ進まなければ、本番は前の版のまま残り、Vercel の標準のメールで失敗が届く（ノートが0件や壊れたリンクのアプリを本番に出さない）
 - 前提（崩れたら見直す）：Vercel のビルドのコマンドは `npm run build` のまま。CI と画面のテスト（`playwright.config.ts`）は `npx next build` を直接呼び、`e2e/fixtures/` のノートで動くので、保管庫を読まない。CI の型チェック（`next typegen` が `next.config.ts` を読む）には `CONTENT_DIR: e2e/fixtures/content` を渡す。取る先・鍵の渡し方・`VERCEL` での見分け方を変えたら、`scripts/prepare-content.mjs` と `docs/vault.md` を合わせる
 - 当てはまる場所：`scripts/prepare-content.mjs`、`package.json` の `build`、`next.config.ts` のコンテンツフォルダがないときの止め方、`.gitignore`、`.env.example`、`.github/workflows/ci.yml` の `check`、`docs/vault.md`
 
@@ -88,8 +88,9 @@
 - 当てはまる場所：`src/app/files/[...path]/route.ts`、`src/lib/notes.ts` の `readContentFile`、`src/lib/note-files.ts`、`src/lib/note-images.ts`、`src/proxy.ts` の `matcher`
 
 ### 保管庫には決まりに合うものだけを置く
+- コンテンツフォルダは保管庫の `notes/` の中。`notes/` の外は読まず、検査もしない。一番上には `index.md` と分類のフォルダ（資格・実践・基礎・スポット）だけを置く。資格・実践・基礎の直下は教材のフォルダ、スポットの直下はテーマのフォルダ（中は自由）。分類の名前と順は `src/lib/note-categories.json` の1か所に置き、ノートの一覧（`src/lib/notes.ts` が一番上をこの順に並べ、分類にない名前は後ろに出す）と検査が読む。理由：`.mjs` の検査は `.ts` を読めないので両方が読める JSON にし、書き写して「検査に通るのに並ばない」ずれが起きないようにする。分類にない名前を一覧から隠さないのは、検査でビルドを止めるので、アプリに分かれ道を作らないため
 - 置いてよいのは、ノート（`.md`）と、アプリが表示できる画像（`src/lib/note-files.ts` と同じ種類）だけ。名前が「.」で始まるもの（`.obsidian/`・`.github/`・`.gitignore`・`.claude/` など）は、どの階層でも検査で飛ばし（中も見ない）、合わないものにしない。名前と並び・書き方の決まりは `docs/content-rules.md`
 - `scripts/check-content.mjs` がコンテンツフォルダを検査する。ビルドの最初に `scripts/prepare-content.mjs` が流し（「ノートはビルドの最初に保管庫から取ってくる」）、合わないものがあればビルドを失敗にする。手元では `npm run check:content -- <保管庫のフォルダ>`（引数がなければ `CONTENT_DIR`、それもなければ `content/`）。`npm run lint` では流さない（アプリのリポジトリに `content/` がないため）
 - 理由：アプリは対象外のファイルを読まないので、置いても表示されず、教材を作るときの作業ファイルが紛れ込むだけになる。「.」で始まるものはアプリがもともと読まず、保管庫には Obsidian・Git・作業の設定（`.obsidian/` など）が要るので飛ばす。リンク切れは `next build` では警告だけで止まらないので、検査で止める。検査をビルドの中で流すので、検査とアプリの版がいつも一致する
 - 前提（崩れたら見直す）：検査はアプリの読み方（`src/lib/notes.ts` が「.」で始まるものを飛ばす、`src/lib/note-files.ts` の画像の種類）を `.mjs` に書き写している。これらを変えたら、検査も合わせる。`e2e/fixtures/` のテスト用のフォルダは検査しない（画面のテストは `npx next build` を直接呼ぶ）
-- 当てはまる場所：保管庫、`scripts/check-content.mjs`、`scripts/prepare-content.mjs`、`package.json` の `build`・`check:content`、`src/lib/notes.ts`・`note-files.ts`・`note-links.ts`・`note-images.ts`
+- 当てはまる場所：保管庫、`src/lib/note-categories.json`、`scripts/check-content.mjs`、`scripts/prepare-content.mjs`、`package.json` の `build`・`check:content`、`src/lib/notes.ts`・`note-files.ts`・`note-links.ts`・`note-images.ts`
