@@ -46,6 +46,40 @@ describe("contentDir", () => {
 });
 
 describe("readNoteTree", () => {
+  test("一番上のフォルダは資格・実践・基礎・スポットの順で、ないものは飛ばし、分類にないものはそのあとに名前の順で並ぶ", async () => {
+    await put({
+      "スポット/GCP/認証.md": "本文",
+      "基礎/読書メモ/b.md": "本文",
+      "資格/AWS/a.md": "本文",
+      "その他/x.md": "本文",
+      "あ/y.md": "本文",
+    });
+
+    const tree = await readNoteTree(dir);
+
+    expect(tree.children.map((entry) => entry.name)).toEqual([
+      "資格",
+      "基礎",
+      "スポット",
+      "あ",
+      "その他",
+    ]);
+  });
+
+  test("2段目より下はフォルダが先、名前の順のまま", async () => {
+    await put({
+      "実践/開発/b.md": "本文",
+      "実践/スポット/a.md": "本文",
+      "実践/a.md": "本文",
+    });
+
+    const tree = await readNoteTree(dir);
+    const practice = tree.children[0];
+    if (practice.type !== "folder") throw new Error("フォルダではない");
+
+    expect(practice.children.map((entry) => entry.name)).toEqual(["スポット", "開発", "a"]);
+  });
+
   test("md ファイルとフォルダを構成そのままの木にし、md 以外と md のないフォルダは出さない", async () => {
     await put({
       "開発/Git.md": "本文",

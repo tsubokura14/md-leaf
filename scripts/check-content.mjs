@@ -10,10 +10,14 @@ import remarkMath from "remark-math";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
 import { parse as parseYaml } from "yaml";
+// 分類の名前は、アプリの一覧の並び（src/lib/notes.ts）と同じ1か所から読む
+import categories from "../src/lib/note-categories.json" with { type: "json" };
 
 export const RULES = {
   fileType: "ノート（.md）と画像（png・jpg・jpeg・gif・webp・svg）以外は置かない",
-  topLevel: "一番上には index.md と教材のフォルダだけを置く",
+  topLevel: "一番上には index.md と、資格・実践・基礎・スポットのフォルダだけを置く",
+  courseCategoryFile: "資格・実践・基礎の直下には教材のフォルダだけを置く",
+  themeCategoryFile: "スポットの直下にはテーマのフォルダだけを置く",
   noHome: "一番上にホームの index.md を置く",
   homeLink: "index.md から、この教材の入口へのリンクを置く",
   noEntry: "教材のフォルダに入口（index_<教材名>.md）を置く",
@@ -213,6 +217,9 @@ function checkNote(file, source, noteSet, imageSet, problems) {
  * @param {string} root コンテンツフォルダ
  * @returns {{ file: string, rule: string }[]} file はコンテンツフォルダからのパス。file の順
  */
+// 教材を置く分類は、順の一覧からテーマを置く分類を除いたもの（一覧を2つだけにして、ずれないようにする）
+const courseCategories = categories.order.filter((name) => !categories.themeCategories.includes(name));
+
 export function checkContent(root) {
   const problems = [];
   const notes = [];
@@ -220,10 +227,22 @@ export function checkContent(root) {
   const entryNotes = [];
 
   for (const entry of listEntries(root, "", problems)) {
-    if (entry.isDir) {
-      const entryNote = checkCourse(root, entry.path, problems, notes, images);
-      if (entryNote) entryNotes.push(entryNote);
-    } else if (entry.name === HOME_FILE) {
+    if (entry.isDir && courseCategories.includes(entry.name)) {
+      for (const child of listEntries(root, entry.path, problems)) {
+        if (!child.isDir) {
+          problems.push({ file: child.path, rule: RULES.courseCategoryFile });
+          continue;
+        }
+        const entryNote = checkCourse(root, child.path, problems, notes, images);
+        if (entryNote) entryNotes.push(entryNote);
+      }
+    } else if (entry.isDir && categories.themeCategories.includes(entry.name)) {
+      // テーマのフォルダの中は単発の資料なので、入口・ガイド・番号を見ない（ホームからのリンクも要らない）
+      for (const child of listEntries(root, entry.path, problems)) {
+        if (child.isDir) collectFiles(root, child.path, problems, notes, images);
+        else problems.push({ file: child.path, rule: RULES.themeCategoryFile });
+      }
+    } else if (entry.name === HOME_FILE && !entry.isDir) {
       notes.push(entry.path);
     } else {
       problems.push({ file: entry.path, rule: RULES.topLevel });

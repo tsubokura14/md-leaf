@@ -6,14 +6,14 @@
 
 1. PC の Obsidian で書き、保管庫で commit して main に push する
 2. 保管庫の GitHub Actions が、Vercel の Deploy Hook を呼ぶ
-3. Vercel がアプリの main をビルドする。ビルドの最初に `scripts/prepare-content.mjs` が、保管庫の main を `content/` に取って検査する
+3. Vercel がアプリの main をビルドする。ビルドの最初に `scripts/prepare-content.mjs` が、保管庫の main を取り、その中の `notes/` を `content/` に移して検査する（`notes/` がなければ失敗する）
 4. 検査に通れば、数分で本番に反映される。通らない・保管庫を読めないときはビルドが失敗し、本番は前の版のまま残り、Vercel から失敗のメールが届く
 
 アプリのリポジトリの PR のプレビューも、同じく保管庫の今のノートでビルドされる。
 
 ## 始める前に
 
-- 保管庫が検査に通る状態にしておく。手元で `npm run check:content -- <保管庫のフォルダ>` を実行し、何も出ないことを確かめる。通らないまま本番をビルドすると、失敗し続ける（本番は前の版のまま）
+- 保管庫が検査に通る状態にしておく。手元で `npm run check:content -- <保管庫>/notes` を実行し、何も出ないことを確かめる。通らないまま本番をビルドすると、失敗し続ける（本番は前の版のまま）
 - 保管庫の `.gitignore` に `.obsidian/workspace*.json` を書いておく（端末ごとに変わるファイルを push しない）
 
 ## 1. 保管庫を読むだけの鍵を作る
@@ -40,7 +40,7 @@ Vercel のアプリのプロジェクトの「Settings」→「Environment Varia
 
 - Preview にも置くのは、PR のプレビューも保管庫のノートでビルドするため。置かないと、プレビューのビルドが失敗する
 - `CONTENT_DIR` は Vercel には置かない（ビルドで取った `content/` を読む）
-- 足したら、Vercel で本番を再デプロイし、ビルドのログに「保管庫 `<VAULT_REPO>` を content/ に取ります」が出て、成功することを確かめる
+- 足したら、Vercel で本番を再デプロイし、ビルドのログに「保管庫 `<VAULT_REPO>` を取り、notes/ を content/ にします」が出て、成功することを確かめる
 
 ## 3. Deploy Hook を作り、保管庫の secret に入れる
 
@@ -93,8 +93,8 @@ jobs:
 
 手元では保管庫を GitHub から取らず、手元の保管庫のフォルダを読む（push していない書きかけも確かめられる）。
 
-1. アプリのリポジトリの `.env.local` に、手元の保管庫のフォルダを書く（例：`CONTENT_DIR=../learning-vault`。`.env.example` にも同じ例がある）
-2. `npm run dev` で画面を確かめ、`npm run check:content -- <保管庫のフォルダ>` で検査する（`check:content` は `.env.local` を読まないので、フォルダを引数で渡す。`npm run build` は `.env.local` を読み、同じフォルダを検査してからビルドする）
+1. アプリのリポジトリの `.env.local` に、手元の保管庫の `notes/` フォルダを書く（例：`CONTENT_DIR=../learning-vault/notes`。`.env.example` にも同じ例がある）
+2. `npm run dev` で画面を確かめ、`npm run check:content -- <保管庫>/notes` で検査する（`check:content` は `.env.local` を読まないので、フォルダを引数で渡す。`npm run build` は `.env.local` を読み、同じフォルダを検査してからビルドする）
 
 `CONTENT_DIR` を書かずに `npm run dev`・`npm run build`・`npm run typecheck` を動かすと、コンテンツフォルダがないと出て止まる。
 

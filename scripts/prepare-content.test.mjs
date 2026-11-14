@@ -17,11 +17,18 @@ const note = (title, body = "") => `---\ntitle: ${title}\n---\n\n${body}\n`;
 
 // 決まりに合う最小のコンテンツフォルダ
 const validFiles = {
-  "index.md": note("ホーム", "- [入門](<入門/index_入門.md>)"),
-  "入門/index_入門.md": note("入門"),
-  "入門/00_ガイド.md": note("ガイド"),
-  "入門/01_はじめに.md": note("はじめに"),
+  "index.md": note("ホーム", "- [入門](<資格/入門/index_入門.md>)"),
+  "資格/入門/index_入門.md": note("入門"),
+  "資格/入門/00_ガイド.md": note("ガイド"),
+  "資格/入門/01_はじめに.md": note("はじめに"),
 };
+
+// 保管庫の形。コンテンツフォルダは notes/ の中で、外には README.md や設定のフォルダがある
+const vaultOf = (files) => ({
+  "README.md": "# 保管庫",
+  ".claude/settings.json": "{}",
+  ...Object.fromEntries(Object.entries(files).map(([path, body]) => [`notes/${path}`, body])),
+});
 
 function writeFiles(root, files) {
   for (const [path, body] of Object.entries(files)) {
@@ -38,7 +45,7 @@ function makeCwd() {
 }
 
 // git の代わり。呼ばれた引数を残し、files を取る先（引数の最後）に書いて status を返す
-function fakeGit({ status = 0, files = validFiles } = {}) {
+function fakeGit({ status = 0, files = vaultOf(validFiles) } = {}) {
   const calls = [];
   const run = (command, args, options) => {
     calls.push({ command, args, options });
@@ -62,7 +69,7 @@ function prepare({ env = {}, cwd = makeCwd(), run = fakeGit().run } = {}) {
 
 describe("prepareContent", () => {
   describe("Vercel のビルド", () => {
-    it("保管庫を content/ に取って .git を消し、検査が通れば 0 を返す", () => {
+    it("保管庫を .vault/ に取り、notes/ の中だけを content/ に移して、検査が通れば 0 を返す", () => {
       const git = fakeGit();
       const { code, cwd } = prepare({ env: VAULT, run: git.run });
       expect(code).toBe(0);
@@ -75,10 +82,30 @@ describe("prepareContent", () => {
         "--branch",
         "main",
         "https://github.com/owner/learning-vault.git",
-        join(cwd, "content"),
+        join(cwd, ".vault"),
       ]);
       expect(existsSync(join(cwd, "content", "index.md"))).toBe(true);
-      expect(existsSync(join(cwd, "content", ".git"))).toBe(false);
+      expect(existsSync(join(cwd, "content", "資格", "入門", "01_はじめに.md"))).toBe(true);
+      expect(existsSync(join(cwd, "content", "README.md"))).toBe(false);
+      expect(existsSync(join(cwd, "content", ".claude"))).toBe(false);
+      expect(existsSync(join(cwd, "content", "notes"))).toBe(false);
+      expect(existsSync(join(cwd, ".vault"))).toBe(false);
+    });
+
+    it("保管庫に notes/ がなければ、文言を出して 1 を返し、一時のフォルダを残さない", () => {
+      const { code, lines, cwd } = prepare({ env: VAULT, run: fakeGit({ files: validFiles }).run });
+      expect(code).toBe(1);
+      expect(lines.join("\n")).toContain("保管庫に notes/ フォルダがありません");
+      expect(existsSync(join(cwd, "content"))).toBe(false);
+      expect(existsSync(join(cwd, ".vault"))).toBe(false);
+    });
+
+    it("取る前に、前に残った .vault/ を消す", () => {
+      const cwd = makeCwd();
+      writeFiles(join(cwd, ".vault"), { "notes/古いノート.md": note("古い") });
+      const { code } = prepare({ env: VAULT, cwd });
+      expect(code).toBe(0);
+      expect(existsSync(join(cwd, "content", "古いノート.md"))).toBe(false);
     });
 
     it("鍵は引数に入れず、環境変数でヘッダーとして渡し、入力を待たせない", () => {
@@ -123,10 +150,10 @@ describe("prepareContent", () => {
     });
 
     it("取った保管庫が決まりに合わなければ、一覧を出して 1 を返す", () => {
-      const files = { ...validFiles, "README.md": "# 保管庫" };
+      const files = vaultOf({ ...validFiles, "資格/メモ.md": note("メモ") });
       const { code, lines } = prepare({ env: VAULT, run: fakeGit({ files }).run });
       expect(code).toBe(1);
-      expect(lines.join("\n")).toContain("content/README.md");
+      expect(lines.join("\n")).toContain("content/資格/メモ.md");
     });
   });
 

@@ -5,7 +5,7 @@ import { logIn } from "./session";
 import { allowedTestEmail } from "./test-env";
 
 const PC = { width: 1440, height: 900 };
-const GIT_NOTE = "/notes/開発/Git ブランチの運用メモ";
+const GIT_NOTE = "/notes/実践/開発/Git ブランチの運用メモ";
 
 // 上の帯の場所（パンくず）
 function place(page: Page) {
@@ -70,7 +70,14 @@ test.describe("ホーム", () => {
       "aria-current",
       "page",
     );
-    for (const name of ["開発", "読書メモ", "日記"]) {
+    // 一番上は分類の順（src/lib/note-categories.json）。名前の順ではない
+    await expect(tree.getByRole("button", { name: /^(資格|実践|基礎|スポット)$/ })).toHaveText([
+      "資格",
+      "実践",
+      "基礎",
+      "スポット",
+    ]);
+    for (const name of ["資格", "実践", "基礎", "スポット"]) {
       await expect(tree.getByRole("button", { name })).toHaveAttribute("aria-expanded", "false");
     }
     await expect(tree.getByRole("link", { name: "Git ブランチの運用メモ" })).toBeHidden();
@@ -87,7 +94,7 @@ test.describe("ノート", () => {
       page.getByRole("heading", { level: 1, name: "Git ブランチの運用メモ" }),
     ).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "流れ" })).toBeVisible();
-    await expect(place(page)).toHaveText("開発 / Git ブランチの運用メモ");
+    await expect(place(page)).toHaveText("実践 / 開発 / Git ブランチの運用メモ");
     await expect(page).toHaveTitle("Git ブランチの運用メモ - md-leaf");
     await waitForDiagram(page);
     await expect(page).toHaveScreenshot("note-default.png", { fullPage: true });
@@ -109,11 +116,10 @@ test.describe("ノート", () => {
     await page.goto(GIT_NOTE);
     await expect(page.getByRole("button", { name: "ノートの一覧を開く" })).toBeHidden();
     const tree = sidebar(page);
-    await expect(tree.getByRole("button", { name: "開発" })).toHaveAttribute(
-      "aria-expanded",
-      "true",
-    );
-    await expect(tree.getByRole("button", { name: "日記" })).toHaveAttribute(
+    for (const name of ["実践", "開発"]) {
+      await expect(tree.getByRole("button", { name })).toHaveAttribute("aria-expanded", "true");
+    }
+    await expect(tree.getByRole("button", { name: "スポット" })).toHaveAttribute(
       "aria-expanded",
       "false",
     );
@@ -198,7 +204,7 @@ test.describe("ノート", () => {
     context,
   }) => {
     await context.clearCookies();
-    await page.goto("/files/開発/branch-graph.png");
+    await page.goto("/files/実践/開発/branch-graph.png");
     await expect(page).toHaveURL(/\/login\?/);
     expect(new URL(page.url()).searchParams.get("callbackUrl")).toMatch(
       /^\/files\/.+\/branch-graph\.png$/,
@@ -209,8 +215,9 @@ test.describe("ノート", () => {
     await page.setViewportSize(PC);
     await page.goto(GIT_NOTE);
     const tree = sidebar(page);
+    await clickWhenHydrated(tree.getByRole("button", { name: "基礎" }));
     const folder = tree.getByRole("button", { name: "読書メモ" });
-    await clickWhenHydrated(folder);
+    await folder.click();
     await expect(folder).toHaveAttribute("aria-expanded", "true");
     await expect(tree.getByRole("link", { name: "積読を減らす" })).toBeVisible();
     await folder.click();
@@ -224,18 +231,21 @@ test.describe("ノート", () => {
     await page.setViewportSize(PC);
     await page.goto(GIT_NOTE);
     const tree = sidebar(page);
+    const basics = tree.getByRole("button", { name: "基礎" });
+    await clickWhenHydrated(basics);
     const reading = tree.getByRole("button", { name: "読書メモ" });
-    await clickWhenHydrated(reading);
+    await reading.click();
     await expect(reading).toHaveAttribute("aria-expanded", "true");
+    await tree.getByRole("button", { name: "スポット" }).click();
     await tree.getByRole("button", { name: "日記" }).click();
     await tree.getByRole("link", { name: "今月の目標" }).click();
     await expect(page.getByRole("heading", { level: 1, name: "今月の目標" })).toBeVisible();
-    await expect(tree.getByRole("button", { name: "日記" })).toHaveAttribute(
-      "aria-expanded",
-      "true",
-    );
-    await expect(reading).toHaveAttribute("aria-expanded", "false");
-    await expect(tree.getByRole("button", { name: "開発" })).toHaveAttribute(
+    for (const name of ["スポット", "日記"]) {
+      await expect(tree.getByRole("button", { name })).toHaveAttribute("aria-expanded", "true");
+    }
+    await expect(basics).toHaveAttribute("aria-expanded", "false");
+    await expect(reading).toBeHidden();
+    await expect(tree.getByRole("button", { name: "実践" })).toHaveAttribute(
       "aria-expanded",
       "false",
     );
@@ -274,9 +284,9 @@ test.describe("本文のノートへのリンク", () => {
     await waitForBody(page);
     await markPage(page);
     await bodyLink(page, "リリースの手順").click();
-    await expect(page).toHaveURL(encodeURI("/notes/開発/リリースの手順"));
+    await expect(page).toHaveURL(encodeURI("/notes/実践/開発/リリースの手順"));
     await expect(page.getByRole("heading", { level: 1, name: "リリースの手順" })).toBeVisible();
-    await expect(place(page)).toHaveText("開発 / リリースの手順");
+    await expect(place(page)).toHaveText("実践 / 開発 / リリースの手順");
     await expect(page).toHaveTitle("リリースの手順 - md-leaf");
     await expect(sidebar(page).getByRole("link", { name: "リリースの手順" })).toHaveAttribute(
       "aria-current",
@@ -291,7 +301,7 @@ test.describe("本文のノートへのリンク", () => {
     await markPage(page);
     await bodyLink(page, "Docker のメモ").click();
     await expect(page.getByRole("heading", { level: 1, name: "Docker のメモ" })).toBeVisible();
-    await expect(place(page)).toHaveText("開発 / Docker のメモ");
+    await expect(place(page)).toHaveText("実践 / 開発 / Docker のメモ");
     await page.goBack();
     await expect(page).toHaveURL("/");
     await expect(page.getByRole("heading", { level: 1, name: "ノートの入り口" })).toBeVisible();
@@ -302,7 +312,7 @@ test.describe("本文のノートへのリンク", () => {
   test("リンク先がないと「ノートが見つかりません」を出し、「ホームへ戻る」でホームへ移る", async ({
     page,
   }) => {
-    await page.goto("/notes/日記/2026-11");
+    await page.goto("/notes/スポット/日記/2026-11");
     await waitForBody(page);
     await bodyLink(page, "古い名前").click();
     await expect(page.getByRole("heading", { name: "ノートが見つかりません" })).toBeVisible();
@@ -356,10 +366,11 @@ test.describe("ノートの一覧（スマホ）", () => {
   test("ノートを押すと、そこへ移って一覧を閉じる", async ({ page }) => {
     await page.goto("/");
     await openDrawer(page);
+    await drawer(page).getByRole("button", { name: "実践" }).click();
     await drawer(page).getByRole("button", { name: "開発" }).click();
     await drawer(page).getByRole("link", { name: "リリースの手順" }).click();
     await expect(page.getByRole("heading", { level: 1, name: "リリースの手順" })).toBeVisible();
-    await expect(place(page)).toHaveText("開発 / リリースの手順");
+    await expect(place(page)).toHaveText("実践 / 開発 / リリースの手順");
     await expect(drawer(page)).toBeHidden();
   });
 
@@ -401,7 +412,7 @@ test.describe("ホーム（index.md がない）", () => {
       await expect(
         main.getByText("読みたいノートを選んでください。", { exact: true }),
       ).toBeVisible();
-      await expect(main.getByRole("button", { name: "開発" })).toBeVisible();
+      await expect(main.getByRole("button", { name: "実践" })).toBeVisible();
       await expect(main.getByRole("link", { name: "ホーム" })).toHaveCount(0);
       await expect(main.getByRole("button", { name: "ログアウト" })).toHaveCount(0);
       await expect(place(page)).toHaveText("ホーム");
@@ -412,8 +423,9 @@ test.describe("ホーム（index.md がない）", () => {
   test("一覧のノートを押すと、そのノートへ移る", { tag: "@content-no-index" }, async ({ page }) => {
     await page.goto("/");
     const main = page.getByRole("main");
+    await clickWhenHydrated(main.getByRole("button", { name: "実践" }));
     const folder = main.getByRole("button", { name: "開発" });
-    await clickWhenHydrated(folder);
+    await folder.click();
     await expect(folder).toHaveAttribute("aria-expanded", "true");
     await main.getByRole("link", { name: "リリースの手順" }).click();
     await expect(page.getByRole("heading", { level: 1, name: "リリースの手順" })).toBeVisible();
@@ -431,7 +443,7 @@ test.describe("ホーム（index.md がない）", () => {
       await expect(
         main.getByText("読みたいノートを選んでください。", { exact: true }),
       ).toBeHidden();
-      await expect(main.getByRole("button", { name: "開発" })).toBeHidden();
+      await expect(main.getByRole("button", { name: "実践" })).toBeHidden();
     },
   );
 });
@@ -455,7 +467,7 @@ test.describe("ホーム（ノートが1つもない）", () => {
 });
 
 test.describe("ノートが見つからない", () => {
-  const MISSING = "/notes/開発/ないノート";
+  const MISSING = "/notes/実践/開発/ないノート";
 
   test("ない URL では「ノートが見つかりません」と説明を出し、場所は空", async ({ page }) => {
     await page.goto(MISSING);
@@ -479,7 +491,7 @@ test.describe("ノートが見つからない", () => {
     await page.goto(MISSING);
     await expect(page.getByRole("heading", { name: "ノートが見つかりません" })).toBeVisible();
     const tree = sidebar(page);
-    await expect(tree.getByRole("button", { name: "開発" })).toHaveAttribute(
+    await expect(tree.getByRole("button", { name: "実践" })).toHaveAttribute(
       "aria-expanded",
       "false",
     );
@@ -509,6 +521,7 @@ test.describe("読み込み中・読み込めなかった", () => {
     await page.goto("/");
     const shell = waitForAppShell(page, (path) => path.startsWith("/notes/"));
     await openDrawer(page);
+    await drawer(page).getByRole("button", { name: "実践" }).click();
     await drawer(page).getByRole("button", { name: "開発" }).click();
     await shell;
     await drawer(page).getByRole("link", { name: "Git ブランチの運用メモ" }).click();
@@ -527,7 +540,7 @@ test.describe("読み込み中・読み込めなかった", () => {
     await interceptNavigation(page, GIT_NOTE, "hold");
     await goToNote(page);
     await expect(skeleton(page)).toBeVisible();
-    await expect(place(page)).toHaveText("開発 / Git ブランチの運用メモ");
+    await expect(place(page)).toHaveText("実践 / 開発 / Git ブランチの運用メモ");
     await expect(page.getByRole("button", { name: "ノートの一覧を開く" })).toBeVisible();
     await expect(page).toHaveScreenshot("note-loading.png", { fullPage: true });
   });
@@ -546,7 +559,8 @@ test.describe("読み込み中・読み込めなかった", () => {
     await page.goto("/");
     const shell = waitForAppShell(page, (path) => path.startsWith("/notes/"));
     const tree = sidebar(page);
-    await clickWhenHydrated(tree.getByRole("button", { name: "開発" }));
+    await clickWhenHydrated(tree.getByRole("button", { name: "実践" }));
+    await tree.getByRole("button", { name: "開発" }).click();
     await shell;
     await tree.getByRole("link", { name: "Git ブランチの運用メモ" }).click();
     await expect(skeleton(page)).toBeVisible();
@@ -560,7 +574,7 @@ test.describe("読み込み中・読み込めなかった", () => {
     await goToNote(page);
     await expect(errorBanner(page)).toContainText("ノートを読み込めませんでした");
     await expect(errorBanner(page)).toContainText("通信が切れている可能性があります。");
-    await expect(place(page)).toHaveText("開発 / Git ブランチの運用メモ");
+    await expect(place(page)).toHaveText("実践 / 開発 / Git ブランチの運用メモ");
     // 押した場所にマウスが残り、ボタンが hover の色で写らないよう、外へ動かす
     await page.mouse.move(0, 0);
     await expect(page).toHaveScreenshot("note-error.png", { fullPage: true });

@@ -4,8 +4,8 @@ import { logIn } from "./session";
 import { allowedTestEmail } from "./test-env";
 
 const PC = { width: 1440, height: 900 };
-const GIT_NOTE = "/notes/開発/Git ブランチの運用メモ";
-const RELEASE_NOTE = "/notes/開発/リリースの手順";
+const GIT_NOTE = "/notes/実践/開発/Git ブランチの運用メモ";
+const RELEASE_NOTE = "/notes/実践/開発/リリースの手順";
 // 上の帯の高さ（h-14）
 const TOP_BAR_HEIGHT = 56;
 
@@ -162,7 +162,7 @@ test.describe("スマホの目次", () => {
     "見出しが多いと、上に幕が見える高さで止まり、「目次」を残して見出しの並びだけがスクロールする",
     { tag: "@content-many" },
     async ({ page }) => {
-      await page.goto("/notes/開発/開発のノート 1");
+      await page.goto("/notes/実践/開発/開発のノート 1");
       await openToc(page);
       const box = await sheet(page).boundingBox();
       expect(box && box.y).toBeGreaterThan(TOP_BAR_HEIGHT);
@@ -201,7 +201,7 @@ test.describe("広い PC の目次", () => {
 
 test.describe("目次を出さないとき", () => {
   test("見出しのないノートでは、目次のボタンも右の目次も出ない", async ({ page }) => {
-    await page.goto("/notes/読書メモ/積読を減らす");
+    await page.goto("/notes/基礎/読書メモ/積読を減らす");
     await expect(page.getByRole("heading", { level: 1, name: "積読を減らす" })).toBeVisible();
     await expect(tocButton(page)).toBeHidden();
     await page.setViewportSize(PC);
@@ -215,7 +215,7 @@ test.describe("目次を出さないとき", () => {
   });
 
   test("ノートが見つからない画面では、目次のボタンが出ない", async ({ page }) => {
-    await page.goto("/notes/開発/ないノート");
+    await page.goto("/notes/実践/開発/ないノート");
     await expect(page.getByRole("heading", { name: "ノートが見つかりません" })).toBeVisible();
     await expect(tocButton(page)).toBeHidden();
   });
