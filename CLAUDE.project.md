@@ -47,3 +47,4 @@ AGENTS.md と CLAUDE.md はテンプレートのものなので、このプロ�
 
 - 画面を動かすテストで、ページを開いてすぐボタン（フォルダ、☰ など）を押すときは、`e2e/hydration.ts` の `clickWhenHydrated` で React がつながるのを待ってから押す。つながる前に押すと何も起きず、CI でたまに落ちる（理由は `e2e/hydration.ts`）
 - `/dev-build` の始めに `docker info` で Docker が動いているか確かめ、動いていなければ先に人に起動を頼む
+- PR・Issue・コミットの題や本文を Git Bash から `gh`・`git` に渡すとき、`/` で始まる文字（`/content-review` など）は Git Bash が Windows のパスに書き換える（`C:/Program Files/Git/…`）。`MSYS_NO_PATHCONV=1` を付けて呼ぶか、題の頭を `/` 以外にする
