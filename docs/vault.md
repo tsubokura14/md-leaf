@@ -50,6 +50,13 @@ Vercel のアプリのプロジェクトの「Settings」→「Environment Varia
 2. できた URL を控える。この URL を知っていればだれでもビルドを始められるので、鍵と同じく扱い、リポジトリ・文書には書かない
 3. 保管庫のリポジトリの「Settings」→「Secrets and variables」→「Actions」→「New repository secret」で、名前 `VERCEL_DEPLOY_HOOK_URL`、値に 2 の URL を入れる
 
+### Vercel の Git のつながりを変えたとき
+
+アプリのリポジトリを移したなどで、Vercel のプロジェクトの「Settings」→「Git」でつながりを切ってつなぎ直したら、「Deploy Hooks」が残っているかを見る。なくなっていたら、上の 1〜3 で作り直し、保管庫の secret `VERCEL_DEPLOY_HOOK_URL` を新しい URL に入れ替える（「Update secret」）。入れ替えたら、下の「5. 確かめる」の 1 を行う。
+
+- Deploy Hook の URL が変わっても、保管庫のワークフロー（`.github/workflows/deploy.yml`）は secret を読むだけなので、直さなくてよい
+- `VAULT_REPO`・`VAULT_TOKEN` などの環境変数はプロジェクトに付いているので、つなぎ直しても残る
+
 ## 4. 保管庫に GitHub Actions のワークフローを置く
 
 保管庫に `.github/workflows/deploy.yml` を置く（「.」で始まるので、検査もアプリも見ない）。main に push したら Deploy Hook を呼ぶだけにする。検査はアプリのビルドの中で走るので、ここでは流さない。
