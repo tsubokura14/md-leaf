@@ -95,13 +95,35 @@
 
 ## 設計
 
+- 変えるファイル
+  - `src/styles/tokens.css`：`--c-abstract`・`--c-important`・`--c-caution`（ライト・ダーク）と `--color-abstract`・`--color-important`・`--color-caution` を足す。今の4色は変えない
+  - `src/lib/callouts.ts`：種類（別名を含む）を「本来の種類」（11種類＋知らないものは note）に直す表と、本来の種類から色（7色）を引く表に分ける。アイコンは本来の種類ごとに11個（丸に「i」・電球・三角に「!」は今の形）。`data-callout` には色の名前（7つ）を入れる（今と同じく色を CSS が決める）
+  - `src/components/note-body.css`：`data-callout` の abstract・important・caution の3つを足す
+  - `src/lib/callouts.test.ts`：種類ごとの色と、11種類のアイコンが互いに違うことのテスト
+  - 画面の画像：`e2e/fixtures/content/実践/開発/リリースの手順.md` の最後に、見出しを使わずに（目次のテストを変えないため）11種類と別名（faq）・知らない種類（bug）の見本を足し、`e2e/notes.spec.ts` で見本の範囲だけを `note-callouts.png`・`note-callouts-dark.png` に撮る
+  - 文書：`docs/ui.md` の「トークン」と「部品」のコールアウト（4色→7色、種類ごとにアイコン）、`docs/specs/notes.md` の種類と色・アイコンの表
+- データの変更：なし
+- 理由：色（トークン）とアイコン（種類）は数が違うので、表を分ける。理由は `docs/ui.md` のコールアウトと、`callouts.ts` の表のコメントに残す
+
 ## AIが決めたこと
+
+- 見本は新しいノートではなく今の「リリースの手順」の最後に足す。新しいノートを足すと、ノートの一覧が写る画像（home-index・note-tree など）がすべて変わるため。比べた案：新しいノート／新しいテスト用のフォルダ（サーバーが1つ増える）
 
 - アイコンは今と同じく、24 の枠に線で描く形（`src/components/icons.tsx` と同じ）で11個作る
 - 新しい色のトークンの名前は、色の名前ではなく種類の名前（abstract・important・caution）にする。今の note・tip などと同じ付け方
 
 ## 確かめ方
 
+| 受け入れ条件 | 確かめ方 |
+| --- | --- |
+| 11種類それぞれに違うアイコン | テスト（`src/lib/callouts.test.ts`）と画像（`note-callouts.png`） |
+| 意味を分けた組は色も違う | テスト（`callouts.test.ts` の種類ごとの `data-callout`） |
+| 題がないときは種類名 | テスト（`callouts.test.ts`） |
+| 折りたたみ・題・中身・文字の大きさ・ダークは今のまま | テスト（今の `callouts.test.ts`・`e2e/` のテストと画像がそのまま通る） |
+| 決まりにない種類の出し方 | テスト（`callouts.test.ts` の別名と知らない種類） |
+| ライト・ダークで題の文字が読める | 触って確かめる（`note-callouts.png`・`note-callouts-dark.png` を見る）＋コードを見て確かめる（`src/styles/tokens.css` の値が仕様のとおり） |
+
 ## タスク
 
-- [ ]
+- [ ] 種類ごとの色とアイコン：トークン3つ・`callouts.ts`・`note-body.css`・単体テスト・`docs/ui.md`・`docs/specs/notes.md` が仕様の対応表のとおりになったら完了
+- [ ] 見本の画面：フィクスチャに見本を足し、`note-callouts.png`・`note-callouts-dark.png`（合わせる画像は仕様と同じ名前のフォルダの2枚）を撮り、`docs/specs/notes.md` の画面の表に足したら完了
