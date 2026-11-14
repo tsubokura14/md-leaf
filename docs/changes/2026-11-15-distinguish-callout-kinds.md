@@ -126,4 +126,4 @@
 ## タスク
 
 - [x] 種類ごとの色とアイコン：トークン3つ・`callouts.ts`・`note-body.css`・単体テスト・`docs/ui.md`・`docs/specs/notes.md` が仕様の対応表のとおりになったら完了
-- [ ] 見本の画面：フィクスチャに見本を足し、`note-callouts.png`・`note-callouts-dark.png`（合わせる画像は仕様と同じ名前のフォルダの2枚）を撮り、`docs/specs/notes.md` の画面の表に足したら完了
+- [x] 見本の画面：フィクスチャに見本を足し、`note-callouts.png`・`note-callouts-dark.png`（合わせる画像は仕様と同じ名前のフォルダの2枚）を撮り、`docs/specs/notes.md` の画面の表に足したら完了
