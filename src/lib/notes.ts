@@ -1,6 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import type { NoteHeading } from "./headings";
+import noteCategories from "./note-categories.json";
 import { renderMarkdown } from "./markdown";
 import { imageContentType } from "./note-files";
 import { decodeSegment, toNotePath } from "./note-url";
@@ -41,6 +42,20 @@ const HOME_FILE = "index.md";
 const NOTE_EXTENSION = ".md";
 
 const collator = new Intl.Collator("ja", { numeric: true });
+
+// 分類の名前と順は note-categories.json の1か所に置き、検査（scripts/check-content.mjs）も同じものを読む。
+// 書き写すと「検査に通るのに並ばない」ずれが起きるため（.mjs は .ts を読めないので JSON にした）
+const categoryOrder: readonly string[] = noteCategories.order;
+
+// 一番上のフォルダだけ、分類の順に並べる。分類にない名前は、分類のあとに名前の順で並べる。
+// 隠さないのは、合わない形は検査が本番のビルドで止めるので、アプリに隠す分かれ道を作らないため
+function compareTopFolders(a: ScannedFolder, b: ScannedFolder): number {
+  const rank = (name: string) => {
+    const index = categoryOrder.indexOf(name);
+    return index === -1 ? categoryOrder.length : index;
+  };
+  return rank(a.name) - rank(b.name) || collator.compare(a.name, b.name);
+}
 
 // docs/design.md の「`content/` をサーバーの出力に入れる」
 export function contentDir(): string {
@@ -110,6 +125,7 @@ async function scan(
 ): Promise<{ root: ScannedFolder; homeFile: string | undefined; files: ScannedFile[] }> {
   const files: ScannedFile[] = [];
   const root = await scanFolder(dir, "", "", withNames, files);
+  root.folders.sort(compareTopFolders);
   const homePath = stripExtension(HOME_FILE);
   const home = root.notes.find((note) => note.path === homePath);
   root.notes = root.notes.filter((note) => note !== home);
