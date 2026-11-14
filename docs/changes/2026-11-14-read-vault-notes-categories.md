@@ -103,17 +103,54 @@
 
 ## 設計
 
+### 変えるファイル
+
+- `src/lib/note-categories.json`（新規）：分類の名前の並び `["資格", "実践", "基礎", "スポット"]` と、教材を置く分類（資格・実践・基礎）・テーマを置く分類（スポット）の分け方。アプリ（`src/lib/notes.ts`）と検査（`scripts/check-content.mjs`）の両方がこれを読む（分類の名前と順をアプリの1か所に持つ）
+- `src/lib/notes.ts`：一番上のフォルダだけ、分類の並びの順に並べる。分類にない名前のフォルダは、分類のあとに今の名前の順で並べる（アプリは検査をしないので、検査を通らない形でも表示は壊さない）。2段目より下は今のまま
+- `scripts/check-content.mjs`：一番上・資格/実践/基礎・スポットの決まりと文言（受け入れ条件のとおり）。教材のフォルダの検査（`checkCourse`）とノートの検査はそのまま使う。スポットのテーマのフォルダは `collectFiles` で集めるだけ（入口・ガイド・番号を見ない）。ホームからのリンクの検査は、資格・実践・基礎の教材の入口だけ
+- `scripts/prepare-content.mjs`：Vercel のビルドでは、保管庫を一時のフォルダ（`.vault/`）に取り、`notes/` があれば `content/` に移して一時のフォルダを消す。なければ「保管庫に notes/ フォルダがありません」と出して exit 1。`.gitignore` に `/.vault/` を足す
+- `e2e/fixtures/`：4つのフォルダを新しい形に直す（`content/` では今の「開発」「読書メモ」「日記」を、それぞれ `実践/開発/`・`基礎/読書メモ/`・`スポット/日記/` に移し、`資格/` に小さな教材を1つ足す。ほかの3つも同じ分け方）。`e2e/*.spec.ts` の URL・場所の文字・フォルダの名前を合わせる。一覧と場所が写る画像を撮り直す
+- 文書：`docs/specs/notes.md`（コンテンツフォルダ・一覧の並び）、`docs/content-rules.md`（置いてよいもの・名前と並び・足し方・検査で見つけるもの・精査の観点）、`docs/vault.md` と `.env.example`（`CONTENT_DIR=../learning-vault/notes`）、`docs/design.md`（「ノートはビルドの最初に保管庫から取ってくる」「保管庫には決まりに合うものだけを置く」）
+
+### データの変更
+
+- 保存するデータはない。コンテンツフォルダの中の形だけが変わる。URL・画像の URL はコンテンツフォルダからのパスのままなので、`src/lib/note-url.ts`・`note-links.ts`・`note-images.ts`・`src/proxy.ts` は変えない
+
+### このやり方を選んだ理由
+
+- 本番で `notes/` を `content/` に移す（`CONTENT_DIR` を `content/notes` にしない）：「`content/` をサーバーの出力に入れる」と Proxy の作りを変えずに済み、`notes/` の外（`.claude/` など）をサーバーの出力に入れない。理由は `scripts/prepare-content.mjs` のコメントと `docs/design.md` に残す
+- 分類の一覧を JSON にする：`.mjs` の検査は `.ts` を読めないので、両方が読める形にする（今は書き写しているが、分類はずれると「検査に通るのに並ばない」が起きるため1か所にする）。理由は `src/lib/note-categories.json` を読む側のコメント（`notes.ts`）と `docs/design.md` に残す
+- 分類にない一番上のフォルダも一覧に出す：検査は本番のビルドで止めるので、アプリの側で隠す分かれ道を作らない。理由は `notes.ts` のコメントに残す
+
 ## AIが決めたこと
 
 - 検査の文言（「資格・実践・基礎の直下には教材のフォルダだけを置く」など）は、今の `RULES` の書き方に合わせて決めた
 - スポットの直下にノートを置けないようにした（テーマのフォルダを必ず作る）。理由：Issue の「テーマのフォルダで括る」に合わせ、スポットの一覧が単発のノートで埋まらないようにする
 - `notes/` の外は検査しない。理由：アプリが読まない場所なので、保管庫の一番上に `README.md` などを置いてもよい
+- 分類の一覧は `src/lib/note-categories.json` に置く。理由：`.mjs` の検査と `.ts` のアプリの両方が読める。比べた案：`.mjs` に置いて TS から読む（型が付かない）、両方に書き写す（ずれうる）
+- 分類にない一番上のフォルダも、分類のあとに名前の順で一覧に出す。理由：検査でビルドを止めるので、アプリに隠す分かれ道を作らない。比べた案：一覧から外す
+- 本番では保管庫を `.vault/` に取り、`notes/` を `content/` に移す。理由：「`content/` をサーバーの出力に入れる」と Proxy を変えずに済む。比べた案：Vercel だけ `CONTENT_DIR=content/notes` を使う（出力の追跡を変える要りがあり、`notes/` の外も出力に入る）
+- テスト用のコンテンツフォルダは、今のフォルダを分類の下に移し、`資格/` に小さな教材を足す。理由：今のテストの中身を保ったまま、4つの並びを確かめられる
 - 上の3つと、プロトタイプを作らないことは、2026-11-14 に人が「このままでよい」と確かめた
 
 ## 確かめ方
 
--
+- 本番のビルドは保管庫の `notes/` の中を読み、外は読まない・検査しない：テスト（`scripts/prepare-content.test.mjs`。`notes/` だけが `content/` に残り、`README.md` などは残らない）
+- `notes/` がないときは失敗し、文言が出る：テスト（`scripts/prepare-content.test.mjs`）
+- 手元は `CONTENT_DIR`・引数のフォルダを読む：テスト（既存の `prepare-content.test.mjs`・`check-content.test.mjs` が通ること）と、コードを見て確かめる（`docs/vault.md`・`.env.example` の例が `<保管庫>/notes`）
+- URL はコンテンツフォルダからのパス：テスト（画面を動かすテスト `e2e/notes.spec.ts` で `/notes/実践/開発/…` を開く）
+- 一番上の決まり（index.md と4つだけ、ないものはよい、index.md がない）：テスト（`scripts/check-content.test.mjs`）
+- 資格・実践・基礎の直下はフォルダだけ、教材の決まりは今と同じ、ホームから入口へのリンク：テスト（`scripts/check-content.test.mjs`）
+- スポットの直下はテーマのフォルダだけ、中はどの深さにも置ける、ホームからリンクしなくてよい：テスト（`scripts/check-content.test.mjs`）
+- すべての場所で今と同じ検査：テスト（`scripts/check-content.test.mjs`。分類の下でも種類・title・リンク切れ・`[[ ]]` が見つかる）
+- 一番上は資格・実践・基礎・スポットの順（ないものは飛ばす）、下は今と同じ：テスト（`src/lib/notes.test.ts`）と、画面を動かすテスト（`e2e/notes.spec.ts` の一覧の並び）
+- 上の帯の場所に分類の名前も入る：テスト（`e2e/notes.spec.ts` の「実践 / 開発 / Git ブランチの運用メモ」）
+- 見せ方は変えない：テスト（画像を比べるテスト。撮り直した画像を人が見る）
 
 ## タスク
 
-- [ ]
+- [ ] 分類の一覧を1か所に置き、ノートの一覧の一番上を資格・実践・基礎・スポットの順に並べられたら完了（`src/lib/note-categories.json`・`src/lib/notes.ts`）
+- [ ] 検査が、`notes/` の下の新しい決まり（一番上・資格/実践/基礎・スポット）で合わないものを見つけられたら完了（`scripts/check-content.mjs`）
+- [ ] 本番のビルドが保管庫の `notes/` だけを `content/` に取り、`notes/` がなければ失敗できたら完了（`scripts/prepare-content.mjs`・`.gitignore`）
+- [ ] テスト用のコンテンツフォルダを新しい形に直し、画面を動かすテストを合わせ、一覧・場所が写る画像（`note-tree.png`・`note-tree-many.png`・`note-default*.png`・`home-*.png` など、比べて違うもの）を撮り直せたら完了（`e2e/`・`docs/specs/screens/`）
+- [ ] 今の仕様と決まりの文書を新しい形に直せたら完了（`docs/specs/notes.md`・`docs/content-rules.md`・`docs/vault.md`・`.env.example`・`docs/design.md`）
