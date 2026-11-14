@@ -150,7 +150,7 @@
 ## タスク
 
 - [x] 分類の一覧を1か所に置き、ノートの一覧の一番上を資格・実践・基礎・スポットの順に並べられたら完了（`src/lib/note-categories.json`・`src/lib/notes.ts`）
-- [ ] 検査が、`notes/` の下の新しい決まり（一番上・資格/実践/基礎・スポット）で合わないものを見つけられたら完了（`scripts/check-content.mjs`）
+- [x] 検査が、`notes/` の下の新しい決まり（一番上・資格/実践/基礎・スポット）で合わないものを見つけられたら完了（`scripts/check-content.mjs`）
 - [ ] 本番のビルドが保管庫の `notes/` だけを `content/` に取り、`notes/` がなければ失敗できたら完了（`scripts/prepare-content.mjs`・`.gitignore`）
 - [ ] テスト用のコンテンツフォルダを新しい形に直し、画面を動かすテストを合わせ、一覧・場所が写る画像（`note-tree.png`・`note-tree-many.png`・`note-default*.png`・`home-*.png` など、比べて違うもの）を撮り直せたら完了（`e2e/`・`docs/specs/screens/`）
 - [ ] 今の仕様と決まりの文書を新しい形に直せたら完了（`docs/specs/notes.md`・`docs/content-rules.md`・`docs/vault.md`・`.env.example`・`docs/design.md`）
