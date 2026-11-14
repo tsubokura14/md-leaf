@@ -1,8 +1,11 @@
 import { appIconImage } from "@/components/app-icon";
 
-// マニフェストのアイコン（src/app/manifest.ts）。id がそのまま URL（/icon/192・/icon/512）になる
+// ブラウザのタブのファビコン（32）と、マニフェストのアイコン（src/app/manifest.ts。192・512）。
+// id がそのまま URL（/icon/32・/icon/192・/icon/512）になる。id を変えたら src/proxy.ts の matcher も合わせる
+const FAVICON_SIZE = 32;
+
 export function generateImageMetadata() {
-  return [192, 512].map((width) => ({
+  return [FAVICON_SIZE, 192, 512].map((width) => ({
     id: String(width),
     size: { width, height: width },
     contentType: "image/png",
@@ -10,5 +13,6 @@ export function generateImageMetadata() {
 }
 
 export default async function Icon({ id }: { id: Promise<string> }) {
-  return appIconImage(Number(await id));
+  const size = Number(await id);
+  return appIconImage(size, size === FAVICON_SIZE ? 0.875 : undefined);
 }
