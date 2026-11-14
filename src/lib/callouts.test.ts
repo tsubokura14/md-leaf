@@ -6,6 +6,11 @@ function openingTags(html: string): string[] {
   return [...html.matchAll(/<(div|details) class="callout"[^>]*>/g)].map((m) => m[0]);
 }
 
+// 題のない、中身1行のコールアウトの Markdown
+function callout(kind: string): string {
+  return `> [!${kind}]\n> 中身\n`;
+}
+
 function titleOf(html: string): string | undefined {
   return html.match(/<span class="callout-title-text">(.*?)<\/span>/)?.[1];
 }
@@ -37,22 +42,84 @@ describe("コールアウト", () => {
   });
 
   test.each([
+    ["abstract", "abstract"],
+    ["info", "note"],
     ["note", "note"],
-    ["summary", "note"],
+    ["example", "abstract"],
+    ["tip", "tip"],
+    ["important", "important"],
+    ["question", "warning"],
     ["success", "tip"],
-    ["faq", "warning"],
-    ["bug", "danger"],
-  ])("種類 %s は %s の色にする（別名も同じ）", (kind, color) => {
-    const { html } = renderMarkdown(`> [!${kind}]\n> 中身\n`);
+    ["warning", "warning"],
+    ["caution", "caution"],
+    ["danger", "danger"],
+  ])("種類 %s は %s の色にする", (kind, color) => {
+    const { html } = renderMarkdown(callout(kind));
     expect(openingTags(html)).toEqual([`<div class="callout" data-callout="${color}">`]);
   });
 
-  test("色ごとに違うアイコンを出す", () => {
-    const icons = ["note", "tip", "warning", "danger"].map((kind) => {
-      const { html } = renderMarkdown(`> [!${kind}]\n> 中身\n`);
-      return html.match(/<svg[^>]*class="callout-icon"[^>]*>.*?<\/svg>/)?.[0];
-    });
-    expect(new Set(icons).size).toBe(4);
+  test.each([
+    ["abstract", "info"],
+    ["tip", "important"],
+    ["warning", "caution"],
+  ])("意味を分けた組 %s と %s は色が違う", (a, b) => {
+    const [ha, hb] = [a, b].map((k) => openingTags(renderMarkdown(callout(k)).html));
+    expect(ha).not.toEqual(hb);
+  });
+
+  function iconOf(kind: string): string | undefined {
+    const { html } = renderMarkdown(callout(kind));
+    return html.match(/<svg[^>]*class="callout-icon"[^>]*>.*?<\/svg>/)?.[0];
+  }
+
+  const kinds = [
+    "abstract",
+    "info",
+    "note",
+    "example",
+    "tip",
+    "important",
+    "question",
+    "success",
+    "warning",
+    "caution",
+    "danger",
+  ];
+
+  test("11種類それぞれに違うアイコンを出す", () => {
+    expect(new Set(kinds.map(iconOf)).size).toBe(11);
+  });
+
+  test.each([
+    ["summary", "abstract"],
+    ["tldr", "abstract"],
+    ["hint", "tip"],
+    ["check", "success"],
+    ["done", "success"],
+    ["help", "question"],
+    ["faq", "question"],
+    ["attention", "warning"],
+    ["error", "danger"],
+  ])("別名 %s は %s と同じ色とアイコン", (alias, kind) => {
+    expect(openingTags(renderMarkdown(callout(alias)).html)[0]).toBe(
+      openingTags(renderMarkdown(callout(kind)).html)[0],
+    );
+    expect(iconOf(alias)).toBe(iconOf(kind));
+  });
+
+  test.each(["todo", "quote", "cite", "failure", "fail", "missing", "bug", "memo"])(
+    "%s は note の色と鉛筆のアイコン",
+    (kind) => {
+      expect(openingTags(renderMarkdown(callout(kind)).html)).toEqual([
+        '<div class="callout" data-callout="note">',
+      ]);
+      expect(iconOf(kind)).toBe(iconOf("note"));
+    },
+  );
+
+  test("題がないときは種類名（例：Important）", () => {
+    expect(titleOf(renderMarkdown("> [!important]\n> 中身\n").html)).toBe("Important");
+    expect(titleOf(renderMarkdown("> [!bug]\n> 中身\n").html)).toBe("Bug");
   });
 
   test("別名の題は、書いた別名の先頭を大文字にしたもの", () => {

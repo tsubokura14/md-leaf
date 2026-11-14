@@ -1,37 +1,66 @@
 import type { Element, ElementContent } from "hast";
 import type { Blockquote, Paragraph, PhrasingContent, Root as MdastRoot, RootContent } from "mdast";
 
-type CalloutColor = "note" | "tip" | "warning" | "danger";
+type CalloutKind =
+  | "abstract"
+  | "info"
+  | "note"
+  | "example"
+  | "tip"
+  | "important"
+  | "question"
+  | "success"
+  | "warning"
+  | "caution"
+  | "danger";
 
-// Obsidian 標準の種類（別名を含む）を、トークンの4色にまとめる（docs/specs/notes.md の「本文のブロック」の表）
-const colorOfKind: Record<string, CalloutColor> = {
+type CalloutColor = "abstract" | "note" | "tip" | "important" | "warning" | "caution" | "danger";
+
+// 書いた種類（別名を含む）を、本来の種類（保管庫の決まりの11種類）に直す（docs/specs/notes.md の「本文のブロック」の表）。
+// todo・quote・failure・bug など決まりにない種類は note にする。ここにない種類も note
+const kindOfName: Record<string, CalloutKind> = {
+  abstract: "abstract",
+  summary: "abstract",
+  tldr: "abstract",
+  info: "info",
   note: "note",
-  abstract: "note",
-  summary: "note",
-  tldr: "note",
-  info: "note",
   todo: "note",
-  example: "note",
   quote: "note",
   cite: "note",
+  failure: "note",
+  fail: "note",
+  missing: "note",
+  bug: "note",
+  example: "example",
   tip: "tip",
   hint: "tip",
-  important: "tip",
-  success: "tip",
-  check: "tip",
-  done: "tip",
+  important: "important",
+  question: "question",
+  help: "question",
+  faq: "question",
+  success: "success",
+  check: "success",
+  done: "success",
   warning: "warning",
-  caution: "warning",
   attention: "warning",
-  question: "warning",
-  help: "warning",
-  faq: "warning",
+  caution: "caution",
   danger: "danger",
   error: "danger",
-  failure: "danger",
-  fail: "danger",
-  missing: "danger",
-  bug: "danger",
+};
+
+// 色はトークンの7色、アイコンは種類ごとの11個と数が違うので、表を分ける（docs/ui.md のコールアウト）
+const colorOfKind: Record<CalloutKind, CalloutColor> = {
+  abstract: "abstract",
+  info: "note",
+  note: "note",
+  example: "abstract",
+  tip: "tip",
+  important: "important",
+  question: "warning",
+  success: "tip",
+  warning: "warning",
+  caution: "caution",
+  danger: "danger",
 };
 
 function path(d: string): Element {
@@ -48,9 +77,47 @@ function circle(cx: string, cy: string, r: string): Element {
 }
 
 // アイコンは src/components/icons.tsx と同じ形（24 の枠、線で描き、色は currentColor）
-const iconShapes: Record<CalloutColor, Element[]> = {
+const iconShapes: Record<CalloutKind, Element[]> = {
+  // 横線を並べた紙
+  abstract: [
+    path("M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"),
+    path("M9 8h6"),
+    path("M9 12h6"),
+    path("M9 16h3"),
+  ],
   // 丸に「i」
-  note: [circle("12", "12", "9"), path("M12 11v5"), path("M12 8h.01")],
+  info: [circle("12", "12", "9"), path("M12 11v5"), path("M12 8h.01")],
+  // 鉛筆
+  note: [path("M16 3.5a2.1 2.1 0 0 1 3 3L7.5 18 3 19.5 4.5 15 16 3.5Z"), path("m14 5.5 3 3")],
+  // リスト
+  example: [
+    path("M9 6h11"),
+    path("M9 12h11"),
+    path("M9 18h11"),
+    path("M4 6h.01"),
+    path("M4 12h.01"),
+    path("M4 18h.01"),
+  ],
+  // 星
+  important: [
+    path("m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9L12 3Z"),
+  ],
+  // 丸に「?」
+  question: [
+    circle("12", "12", "9"),
+    path("M9.5 9.5a2.5 2.5 0 0 1 4.9.8c0 1.7-2.4 2.2-2.4 3.7"),
+    path("M12 17h.01"),
+  ],
+  // チェック
+  success: [path("M20 6 9 17l-5-5")],
+  // 八角形に「!」
+  caution: [
+    path("M8.3 3h7.4L21 8.3v7.4L15.7 21H8.3L3 15.7V8.3L8.3 3Z"),
+    path("M12 8v4"),
+    path("M12 16h.01"),
+  ],
+  // 稲妻
+  danger: [path("M13 2 4 14h7l-1 8 9-12h-7l1-8Z")],
   // 電球
   tip: [
     path("M9 18h6"),
@@ -59,8 +126,6 @@ const iconShapes: Record<CalloutColor, Element[]> = {
   ],
   // 三角に「!」
   warning: [path("M12 3 2 20h20L12 3Z"), path("M12 9v5"), path("M12 17h.01")],
-  // 丸に「!」
-  danger: [circle("12", "12", "9"), path("M12 7v6"), path("M12 16h.01")],
 };
 
 function svg(className: string, children: Element[]): Element {
@@ -153,12 +218,13 @@ function trimTitle(title: PhrasingContent[]): PhrasingContent[] {
 function defaultTitle(kind: string): string {
   const lower = kind.toLowerCase();
   // 知らない種類は、書いたままの種類名を題にする
-  if (!(lower in colorOfKind)) return kind;
+  if (!(lower in kindOfName)) return kind;
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
 
 function toCallout(node: Blockquote, header: Header): Blockquote {
-  const color = colorOfKind[header.kind.toLowerCase()] ?? "note";
+  const kind = kindOfName[header.kind.toLowerCase()] ?? "note";
+  const color = colorOfKind[kind];
   const foldable = header.fold !== "";
 
   const titleText: Paragraph = {
@@ -170,7 +236,7 @@ function toCallout(node: Blockquote, header: Header): Blockquote {
   const titleRow: Paragraph = {
     type: "paragraph",
     children: [
-      hastNode(svg("callout-icon", iconShapes[color])),
+      hastNode(svg("callout-icon", iconShapes[kind])),
       titleText,
       ...(foldable ? [hastNode(svg("callout-chevron", [path("m9 6 6 6-6 6")]))] : []),
     ] as unknown as PhrasingContent[],

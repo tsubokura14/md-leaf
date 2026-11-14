@@ -63,6 +63,8 @@
 | --- | --- | --- |
 | 表示 | 題と本文。上の帯に場所。コールアウト・図・コード・表・数式・画像が「本文のブロック」の形で出る。折りたたみのコールアウトは閉じている | ![](screens/note-default.png) |
 | 表示（ダーク） | ダークの色。コールアウト・図・コード・表・数式もダークの色。画像はそのままの色 | ![](screens/note-default-dark.png) |
+| コールアウトの種類 | 11種類のコールアウトと、別名（faq）・知らない種類（bug）の見本。種類ごとのアイコンと色（本文の見本の範囲だけ） | ![](screens/note-callouts.png) |
+| コールアウトの種類（ダーク） | 同じものをダークの色で | ![](screens/note-callouts-dark.png) |
 | 表示（PC） | 左にノートの一覧（今のノートを強調、そのフォルダを開く）。広い PC（幅 1440）では本文の右に目次、上の帯に目次のボタンはない | ![](screens/note-default-pc.png) |
 | 目次を開いた | 下から目次、うしろに幕。上につまみ、「目次」、h2 と字下げした h3 | ![](screens/note-toc.png) |
 | 目次が多い | 上に幕が少し見える高さで止まり、つまみと「目次」は残り、見出しの並びだけがスクロールする | ![](screens/note-toc-many.png) |
@@ -94,12 +96,19 @@
   - 種類の大文字・小文字は区別しない（`[!TIP]` も tip）
   - 種類と色・アイコン
 
-    | 色 | 種類（別名） | アイコン |
+    | 種類（別名） | 色 | アイコン |
     | --- | --- | --- |
-    | note | note、abstract（summary・tldr）、info、todo、example、quote（cite）、知らない種類 | 丸に「i」 |
-    | tip | tip（hint・important）、success（check・done） | 電球 |
-    | warning | warning（caution・attention）、question（help・faq） | 三角に「!」 |
-    | danger | danger（error）、failure（fail・missing）、bug | 丸に「!」 |
+    | abstract（summary・tldr） | abstract | 横線を並べた紙 |
+    | info | note | 丸に「i」 |
+    | note、決まりにない種類（todo・quote・cite・failure・fail・missing・bug、知らない種類） | note | 鉛筆 |
+    | example | abstract | リスト |
+    | tip（hint） | tip | 電球 |
+    | important | important | 星 |
+    | question（help・faq） | warning | 丸に「?」 |
+    | success（check・done） | tip | チェック |
+    | warning（attention） | warning | 三角に「!」 |
+    | caution | caution | 八角形に「!」 |
+    | danger（error） | danger | 稲妻 |
 
 - `> [!種類]-` は、見出しの右に矢印を出し、最初は閉じている。見出しを押すと開閉する（閉じているときの矢印は右向き、開くと下向き）。`> [!種類]+` は、矢印を出し、最初から開いている。`-`・`+` のないものは開閉しない
 - 中身（引用の2行目から）は、ふつうの本文と同じに出す（段落・リスト・コード・リンクなど）。中身がないときは、見出しの行だけを出す。コールアウトの中のコールアウトも、コールアウトとして出す

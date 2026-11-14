@@ -111,6 +111,32 @@ test.describe("ノート", () => {
     await expect(page).toHaveScreenshot("note-default-dark.png", { fullPage: true });
   });
 
+  // コールアウトの種類の見本（リリースの手順の最後の13個）の範囲だけを撮る。見出しを足すと目次のテストが変わるので、見出しは使わない
+  for (const dark of [false, true]) {
+    test(`コールアウトの種類の見本${dark ? "（ダーク）" : ""}`, async ({ page }) => {
+      if (dark) await chooseDark(page);
+      await page.goto("/notes/実践/開発/リリースの手順");
+      await expect(page.getByRole("heading", { level: 1, name: "リリースの手順" })).toBeVisible();
+      if (dark) await expect(page.getByRole("button", { name: "ライトにする" })).toBeVisible();
+      const callouts = page.locator(".note-body > .callout");
+      await expect(callouts).toHaveCount(14);
+      const first = await callouts.nth(1).boundingBox();
+      const last = await callouts.nth(13).boundingBox();
+      if (!first || !last) throw new Error("見本のコールアウトが見つかりません");
+      const pad = 16;
+      const viewport = page.viewportSize()!;
+      await expect(page).toHaveScreenshot(dark ? "note-callouts-dark.png" : "note-callouts.png", {
+        fullPage: true,
+        clip: {
+          x: 0,
+          y: first.y - pad,
+          width: viewport.width,
+          height: last.y + last.height - first.y + pad * 2,
+        },
+      });
+    });
+  }
+
   test("PC：☰ を出さず、左の一覧で今のノートを強調し、そのフォルダを開く", async ({ page }) => {
     await page.setViewportSize(PC);
     await page.goto(GIT_NOTE);
