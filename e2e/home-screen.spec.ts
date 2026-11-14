@@ -44,8 +44,25 @@ test.describe("ホーム画面に追加するための情報", () => {
     expect(await res.body()).toMatchSnapshot("app-icon.png");
   });
 
+  test("ログインしていなくても、ブラウザのタブのファビコン（若葉）が読め、ページの head から指されている", async ({
+    request,
+    page,
+  }) => {
+    const res = await request.get("/icon/32", { maxRedirects: 0 });
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toBe("image/png");
+    expect(await res.body()).toMatchSnapshot("favicon.png");
+
+    await page.goto("/login");
+    const hrefs = await page
+      .locator('head link[rel="icon"]')
+      .evaluateAll((links) => links.map((link) => new URL((link as HTMLLinkElement).href).pathname));
+    expect(hrefs).toContain("/icon/32");
+    expect(hrefs).not.toContain("/favicon.ico");
+  });
+
   // ログインの確かめから外すのは、決まった URL だけ
-  for (const path of ["/manifest.json", "/icon/192/x", "/apple-icon-x"]) {
+  for (const path of ["/manifest.json", "/icon/192/x", "/icon/32/x", "/apple-icon-x"]) {
     test(`ログインしていなければ、似た URL（${path}）はログインの画面へ移る`, async ({
       request,
     }) => {
