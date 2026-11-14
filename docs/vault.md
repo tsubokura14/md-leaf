@@ -52,7 +52,9 @@ Vercel のアプリのプロジェクトの「Settings」→「Environment Varia
 
 ### Vercel の Git のつながりを変えたとき
 
-アプリのリポジトリを移したなどで、Vercel のプロジェクトの「Settings」→「Git」でつながりを切ってつなぎ直したら、「Deploy Hooks」が残っているかを見る。なくなっていたら、上の 1〜3 で作り直し、保管庫の secret `VERCEL_DEPLOY_HOOK_URL` を新しい URL に入れ替える（「Update secret」）。入れ替えたら、下の「5. 確かめる」の 1 を行う。
+アプリのリポジトリを移したなどで、Vercel のプロジェクトの「Settings」→「Git」でつながりを切ってつなぎ直したら、「Deploy Hooks」が残っていても、上の 1〜3 で作り直し（古い Hook は消す）、保管庫の secret `VERCEL_DEPLOY_HOOK_URL` を新しい URL に入れ替える（「Update secret」）。入れ替えたら、下の「5. 確かめる」の 1 を行う。
+
+- 理由：つなぎ直す前に作った Hook は、呼ぶと受け付けの返事（`"state":"PENDING"`）を返すのに、デプロイが作られないことがあった（2026-11-14。保管庫のワークフローは成功に見える）。Vercel の「Deployments」に新しいデプロイが出ないときも、Hook を作り直す
 
 - Deploy Hook の URL が変わっても、保管庫のワークフロー（`.github/workflows/deploy.yml`）は secret を読むだけなので、直さなくてよい
 - `VAULT_REPO`・`VAULT_TOKEN` などの環境変数はプロジェクトに付いているので、つなぎ直しても残る

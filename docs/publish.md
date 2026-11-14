@@ -121,7 +121,7 @@ Vercel の画面で行う。環境変数とドメインはプロジェクトに�
 
 1. GitHub の「Settings」→「Applications」→ Vercel の「Configure」で、Vercel が読めるリポジトリに新しい `md-leaf` が入っているか確かめる（「Only select repositories」なら足す）
 2. Vercel のプロジェクトの「Settings」→「Git」で「Disconnect」し、「Connect Git Repository」で新しい `tsubokura14/md-leaf` を選ぶ。本番のブランチが `main` のままか確かめる
-3. 同じ画面の「Deploy Hooks」を見る。なくなっていたら、`docs/vault.md` の「Vercel の Git のつながりを変えたとき」のとおり作り直し、保管庫の secret を入れ替える
+3. 同じ画面の「Deploy Hooks」を、残っていても `docs/vault.md` の「Vercel の Git のつながりを変えたとき」のとおり作り直し、保管庫の secret を入れ替える
 
 ## 確かめ B：本番が前と同じに動く（人）
 
@@ -194,9 +194,13 @@ git config core.hooksPath   # .githooks
 | 2. 古いリポジトリの名前を変える | 2026-11-14 | `tsubokura14/md-leaf-archive`（非公開）にした。手元の古いクローンの `origin` を向け直した。古いリポジトリには、使っていないブランチ `7-theme-toggle` が残っている（持ち込んでいない） |
 | 3. 新しいリポジトリを作る | 2026-11-14 | `tsubokura14/md-leaf` を非公開で作った |
 | 4. main を push する・確かめ A（取り直したクローン） | 2026-11-14 | 人が push した。main の先頭は `cfa17e1`。ブランチは main だけ、PR 0件、タグ 0件。取り直したクローンで確かめ A が通った |
-| 5. Vercel のつながりを変える | 2026-11-14 | 人が画面でつなぎ直した。Deploy Hook は残っていた（作り直しと保管庫の secret の入れ替えは要らなかった） |
+| 5. Vercel のつながりを変える | 2026-11-14 | 人が画面でつなぎ直した。Deploy Hook は残っていたので、作り直さなかった。あとで、保管庫の push で Hook を呼んでもデプロイが作られないと分かり、作り直して secret を入れ替えたら動いた（下の「あとで分かったこと」） |
 | 確かめ B | 2026-11-14 | 通った。保管庫のワークフローを手で流して成功し、新しいリポジトリの main で本番がビルドされた。本番でログイン・ノートの表示、保管庫の push からの反映を人が確かめた |
 | 6. 公開する | 2026-11-14 | Public にした。ログインしていない状態で開けることを確かめた |
 | 7. 手元の切り替え・確かめ C | 2026-11-14 | 古いフォルダを `md-leaf-archive` に名前を変えた（Claude のアプリの会話がフォルダをつかんでいて、アーカイブするまで失敗した）。worktree のつながりを直し、新しいリポジトリを `md-leaf` にクローンした。`scripts/setup-github.sh` で main の保護と push protection が設定でき、確かめ C が通った |
 | 8. 記録の PR | 2026-11-14 | #1。新しいリポジトリで CI が通り、main の保護のもとで Squash merge でき、マージで Vercel が本番にデプロイした（main のコミットの状態が「Deployment has completed」）。古いリポジトリの #35 を、この記録へのリンクを書いて閉じた |
 | 9. 片付ける | 2026-11-14 | 古い作業フォルダと worktree 3つに、コミットしていない変更と stash はなかった。手元のブランチは、どれも Squash merge 済みか、同じ中身が main にあった。古いフォルダにしかない `.claude/settings.local.json` を新しいフォルダにコピーし、`md-leaf-archive` と worktree をごみ箱に移した。一時フォルダを消した。テンプレートの側の `docs/template-harvest.md` の直しは、まだ伝えていない |
+
+### あとで分かったこと
+
+- 2026-11-14 11:02、保管庫の push（残りの教材を移したもの）で Deploy Hook を呼んだ。Vercel は受け付けの返事（`"state":"PENDING"`）を返し、保管庫のワークフローも成功したが、Vercel にデプロイが作られなかった。つなぎ直す前に作った Hook をそのまま使っていたのが原因と見て、Hook を作り直し、保管庫の secret を入れ替えたら動いた。手順5を「残っていても作り直す」に直した
