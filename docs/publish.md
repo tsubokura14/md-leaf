@@ -152,7 +152,7 @@ bash scripts/setup-github.sh
 ```
 
 - `scripts/setup-github.sh` は、Squash merge だけ・マージしたブランチを消す・main の保護・push protection を設定し、最後に `scripts/link-template.sh` で Git のフックを有効にして、remote `template` を足す。公開したので、main の保護と push protection も「設定しました」と出る
-- `.env.local` は古いフォルダからコピーする（リポジトリには入っていない）
+- `.env.local` と `.claude/settings.local.json`（この PC だけの Claude Code の権限の設定）は、古いフォルダからコピーする（どちらもリポジトリには入っていない）
 - `mv` で失敗したら（「Device or resource busy」。ほかのプログラムがフォルダを使っている）、`md-leaf` を開いているエディタ・エクスプローラー・ターミナルを閉じ、Claude のアプリで `md-leaf` を作業場所にした会話をアーカイブしてからやり直す。アプリは、アーカイブしていない会話のフォルダを、動いていなくてもつかんでいることがある（2026-11-14 はこれが原因だった）
 
 ## 確かめ C：GitHub の設定とテンプレートとのつながり
@@ -190,7 +190,7 @@ git config core.hooksPath   # .githooks
 | 手順 | 日付 | 結果 |
 | --- | --- | --- |
 | 1. 書き換える | 2026-11-14 | 古いリポジトリの main（`66a1770`、この手順書の PR を取り込んだもの）を書き換えた。21 コミット → 20（「ノートを content/ に追加する (#26)」が消えた）。最後の版の中身は、main から `content/` を除いたものと一致。`content/` にあったファイルの中身は 121 個 |
-| 確かめ A（書き換えたクローン） | 2026-11-14 | 通った。`content/` 0、残った中身は長さ0のファイルのもの（`e69de29`）だけ、トークン 0、`.env` は `.env.example` だけ、メールアドレスは noreply と `@example.com` だけ、ref は main だけ。手元のパスの検査は、検査のコマンドの前の版の行自身に当たって 1 になった（本物のパスではない。この PR で式を直した） |
+| 確かめ A（書き換えたクローン） | 2026-11-14 | 通った。`content/` 0、残った中身は長さ0のファイルのもの（`e69de29`）だけ、トークン 0、`.env` は `.env.example` だけ、メールアドレスは noreply と `@example.com` だけ、ref は main だけ。手元のパスの検査は、検査のコマンドの前の版の行自身に当たって 1 になった（本物のパスではない。#1 で式を直した） |
 | 2. 古いリポジトリの名前を変える | 2026-11-14 | `tsubokura14/md-leaf-archive`（非公開）にした。手元の古いクローンの `origin` を向け直した。古いリポジトリには、使っていないブランチ `7-theme-toggle` が残っている（持ち込んでいない） |
 | 3. 新しいリポジトリを作る | 2026-11-14 | `tsubokura14/md-leaf` を非公開で作った |
 | 4. main を push する・確かめ A（取り直したクローン） | 2026-11-14 | 人が push した。main の先頭は `cfa17e1`。ブランチは main だけ、PR 0件、タグ 0件。取り直したクローンで確かめ A が通った |
@@ -198,5 +198,5 @@ git config core.hooksPath   # .githooks
 | 確かめ B | 2026-11-14 | 通った。保管庫のワークフローを手で流して成功し、新しいリポジトリの main で本番がビルドされた。本番でログイン・ノートの表示、保管庫の push からの反映を人が確かめた |
 | 6. 公開する | 2026-11-14 | Public にした。ログインしていない状態で開けることを確かめた |
 | 7. 手元の切り替え・確かめ C | 2026-11-14 | 古いフォルダを `md-leaf-archive` に名前を変えた（Claude のアプリの会話がフォルダをつかんでいて、アーカイブするまで失敗した）。worktree のつながりを直し、新しいリポジトリを `md-leaf` にクローンした。`scripts/setup-github.sh` で main の保護と push protection が設定でき、確かめ C が通った |
-| 8. 記録の PR | 2026-11-14 | この PR |
-| 9. 片付ける | | 古い作業フォルダと worktree は、人が確かめてから消す |
+| 8. 記録の PR | 2026-11-14 | #1。新しいリポジトリで CI が通り、main の保護のもとで Squash merge でき、マージで Vercel が本番にデプロイした（main のコミットの状態が「Deployment has completed」）。古いリポジトリの #35 を、この記録へのリンクを書いて閉じた |
+| 9. 片付ける | 2026-11-14 | 古い作業フォルダと worktree 3つに、コミットしていない変更と stash はなかった。手元のブランチは、どれも Squash merge 済みか、同じ中身が main にあった。古いフォルダにしかない `.claude/settings.local.json` を新しいフォルダにコピーし、`md-leaf-archive` と worktree をごみ箱に移した。一時フォルダを消した。テンプレートの側の `docs/template-harvest.md` の直しは、まだ伝えていない |
