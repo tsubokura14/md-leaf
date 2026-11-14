@@ -94,12 +94,19 @@
   - 種類の大文字・小文字は区別しない（`[!TIP]` も tip）
   - 種類と色・アイコン
 
-    | 色 | 種類（別名） | アイコン |
+    | 種類（別名） | 色 | アイコン |
     | --- | --- | --- |
-    | note | note、abstract（summary・tldr）、info、todo、example、quote（cite）、知らない種類 | 丸に「i」 |
-    | tip | tip（hint・important）、success（check・done） | 電球 |
-    | warning | warning（caution・attention）、question（help・faq） | 三角に「!」 |
-    | danger | danger（error）、failure（fail・missing）、bug | 丸に「!」 |
+    | abstract（summary・tldr） | abstract | 横線を並べた紙 |
+    | info | note | 丸に「i」 |
+    | note、決まりにない種類（todo・quote・cite・failure・fail・missing・bug、知らない種類） | note | 鉛筆 |
+    | example | abstract | リスト |
+    | tip（hint） | tip | 電球 |
+    | important | important | 星 |
+    | question（help・faq） | warning | 丸に「?」 |
+    | success（check・done） | tip | チェック |
+    | warning（attention） | warning | 三角に「!」 |
+    | caution | caution | 八角形に「!」 |
+    | danger（error） | danger | 稲妻 |
 
 - `> [!種類]-` は、見出しの右に矢印を出し、最初は閉じている。見出しを押すと開閉する（閉じているときの矢印は右向き、開くと下向き）。`> [!種類]+` は、矢印を出し、最初から開いている。`-`・`+` のないものは開閉しない
 - 中身（引用の2行目から）は、ふつうの本文と同じに出す（段落・リスト・コード・リンクなど）。中身がないときは、見出しの行だけを出す。コールアウトの中のコールアウトも、コールアウトとして出す

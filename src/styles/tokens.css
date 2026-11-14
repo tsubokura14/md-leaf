@@ -12,6 +12,9 @@
   --color-tip: var(--c-tip);
   --color-warning: var(--c-warning);
   --color-danger: var(--c-danger);
+  --color-abstract: var(--c-abstract);
+  --color-important: var(--c-important);
+  --color-caution: var(--c-caution);
   --color-code-keyword: var(--c-code-keyword);
   --color-code-string: var(--c-code-string);
   --color-code-comment: var(--c-code-comment);
@@ -83,6 +86,9 @@
   --c-tip: #3f8a6a;
   --c-warning: #b07a1c;
   --c-danger: #b0453a;
+  --c-abstract: #2f8590;
+  --c-important: #8a52a8;
+  --c-caution: #c9681f;
   --c-code-keyword: #8a4f9e;
   --c-code-string: #4f7a3a;
   --c-code-comment: #8f8a7e;
@@ -102,6 +108,9 @@
   --c-tip: #7fc4a4;
   --c-warning: #e0b35e;
   --c-danger: #e58a7f;
+  --c-abstract: #74c3cc;
+  --c-important: #c49ae0;
+  --c-caution: #f0a060;
   --c-code-keyword: #c79ad8;
   --c-code-string: #9cc27f;
   --c-code-comment: #7e796d;

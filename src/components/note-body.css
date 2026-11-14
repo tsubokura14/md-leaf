@@ -184,7 +184,7 @@
   margin: 0 auto;
 }
 
-/* コールアウト。色は data-callout（note・tip・warning・danger）で決め、地はその色を bg に薄く混ぜる */
+/* コールアウト。色は data-callout（abstract・note・tip・important・warning・caution・danger）で決め、地はその色を bg に薄く混ぜる */
 .note-body .callout {
   --callout-color: var(--color-note);
   padding: calc(var(--spacing) * 3);
@@ -203,6 +203,18 @@
 
 .note-body .callout[data-callout="danger"] {
   --callout-color: var(--color-danger);
+}
+
+.note-body .callout[data-callout="abstract"] {
+  --callout-color: var(--color-abstract);
+}
+
+.note-body .callout[data-callout="important"] {
+  --callout-color: var(--color-important);
+}
+
+.note-body .callout[data-callout="caution"] {
+  --callout-color: var(--color-caution);
 }
 
 .note-body .callout-title {
