@@ -15,14 +15,16 @@ const note = (title, body = "") => `---\ntitle: ${title}\n---\n\n${body}\n`;
 // 決まりに合う最小の content/。テストごとに足す・消すで、合わない形を作る
 function validContent() {
   return {
-    "index.md": note("ホーム", "- [Docker 入門](<Docker 入門/index_Docker入門.md>)"),
-    "Docker 入門/index_Docker入門.md": note("Docker 入門"),
-    "Docker 入門/00_ガイド.md": note("ガイド"),
-    "Docker 入門/01_はじめに.md": note("はじめに"),
-    "Docker 入門/02_イメージ.md": note("イメージ"),
-    "Docker 入門/図/構成.svg": "<svg></svg>",
-    "Docker 入門/演習/02_問題_パート1.md": note("問題1"),
-    "Docker 入門/演習/02_問題_パート2.md": note("問題2"),
+    "index.md": note("ホーム", "- [Docker 入門](<資格/Docker 入門/index_Docker入門.md>)"),
+    "資格/Docker 入門/index_Docker入門.md": note("Docker 入門"),
+    "資格/Docker 入門/00_ガイド.md": note("ガイド"),
+    "資格/Docker 入門/01_はじめに.md": note("はじめに"),
+    "資格/Docker 入門/02_イメージ.md": note("イメージ"),
+    "資格/Docker 入門/図/構成.svg": "<svg></svg>",
+    "資格/Docker 入門/演習/02_問題_パート1.md": note("問題1"),
+    "資格/Docker 入門/演習/02_問題_パート2.md": note("問題2"),
+    "スポット/GCP/gcloud の認証.md": note("gcloud の認証", "![画面](詳しく/画面.png)"),
+    "スポット/GCP/詳しく/画面.png": "png",
   };
 }
 
@@ -53,23 +55,23 @@ describe("checkContent", () => {
         check({
           ".gitignore": "content/",
           ".obsidian/app.json": "{}",
-          "Docker 入門/.claude/construction-plan.md": "[[計画]]",
-          "Docker 入門/図/.DS_Store": "",
+          "資格/Docker 入門/.claude/construction-plan.md": "[[計画]]",
+          "資格/Docker 入門/図/.DS_Store": "",
         }),
       ).toEqual([]);
     });
 
     it("ノートと画像以外のファイルを見つける", () => {
-      expect(check({ "Docker 入門/図/元データ.pdf": "pdf" })).toEqual([
-        { file: "Docker 入門/図/元データ.pdf", rule: RULES.fileType },
+      expect(check({ "資格/Docker 入門/図/元データ.pdf": "pdf" })).toEqual([
+        { file: "資格/Docker 入門/図/元データ.pdf", rule: RULES.fileType },
       ]);
     });
 
     it("大文字の拡張子の画像は通る", () => {
       expect(
         check({
-          "Docker 入門/図/画面.PNG": "png",
-          "Docker 入門/01_はじめに.md": note("はじめに", "![画面](図/画面.PNG)"),
+          "資格/Docker 入門/図/画面.PNG": "png",
+          "資格/Docker 入門/01_はじめに.md": note("はじめに", "![画面](図/画面.PNG)"),
         }),
       ).toEqual([]);
     });
@@ -82,6 +84,16 @@ describe("checkContent", () => {
       ]);
     });
 
+    it("資格・実践・基礎・スポット以外のフォルダを見つける", () => {
+      expect(check({ "Docker 入門/01_はじめに.md": note("はじめに") })).toEqual([
+        { file: "Docker 入門", rule: RULES.topLevel },
+      ]);
+    });
+
+    it("4つの分類はないものがあってもよい（資格とスポットだけでも通る）", () => {
+      expect(check()).toEqual([]);
+    });
+
     it("index.md がなければ見つける", () => {
       expect(check({ "index.md": null })).toEqual([{ file: "index.md", rule: RULES.noHome }]);
     });
@@ -89,88 +101,135 @@ describe("checkContent", () => {
     it("index.md から入口へのリンクがない教材を見つける", () => {
       expect(
         check({
-          "Git 入門/index_Git入門.md": note("Git 入門"),
-          "Git 入門/00_ガイド.md": note("ガイド"),
-          "Git 入門/01_はじめに.md": note("はじめに"),
+          "実践/Git 入門/index_Git入門.md": note("Git 入門"),
+          "実践/Git 入門/00_ガイド.md": note("ガイド"),
+          "実践/Git 入門/01_はじめに.md": note("はじめに"),
         }),
-      ).toEqual([{ file: "Git 入門/index_Git入門.md", rule: RULES.homeLink }]);
+      ).toEqual([{ file: "実践/Git 入門/index_Git入門.md", rule: RULES.homeLink }]);
+    });
+  });
+
+  describe("資格・実践・基礎", () => {
+    it("直下のファイルを見つける", () => {
+      expect(check({ "資格/メモ.md": note("メモ"), "基礎/図.png": "png" })).toEqual([
+        { file: "基礎/図.png", rule: RULES.courseCategoryFile },
+        { file: "資格/メモ.md", rule: RULES.courseCategoryFile },
+      ]);
+    });
+
+    it("実践・基礎の教材も、教材の決まりで検査する", () => {
+      expect(check({ "基礎/Linux 入門/01_はじめに.md": note("はじめに") })).toEqual([
+        { file: "基礎/Linux 入門", rule: RULES.noEntry },
+        { file: "基礎/Linux 入門", rule: RULES.noGuide },
+      ]);
+    });
+  });
+
+  describe("スポット", () => {
+    it("直下のファイルを見つける", () => {
+      expect(check({ "スポット/メモ.md": note("メモ") })).toEqual([
+        { file: "スポット/メモ.md", rule: RULES.themeCategoryFile },
+      ]);
+    });
+
+    it("テーマのフォルダの中は、入口・ガイド・番号なしで、どの深さにも置ける", () => {
+      expect(
+        check({
+          "スポット/AWS/メモ.md": note("メモ"),
+          "スポット/AWS/a/b/c/深いメモ.md": note("深いメモ", "[戻る](../../../メモ.md)"),
+        }),
+      ).toEqual([]);
+    });
+
+    it("テーマのフォルダの中でも、種類・title・リンク切れ・[[ ]] を見つける", () => {
+      expect(
+        check({
+          "スポット/GCP/元データ.pdf": "pdf",
+          "スポット/GCP/gcloud の認証.md": "# 認証\n\n[ない](ない.md) [[x]]\n",
+        }),
+      ).toEqual([
+        { file: "スポット/GCP/gcloud の認証.md", rule: RULES.noTitle },
+        { file: "スポット/GCP/gcloud の認証.md", rule: `${RULES.brokenLink}（ない.md）` },
+        { file: "スポット/GCP/gcloud の認証.md", rule: `${RULES.wikiLink}（3 行目）` },
+        { file: "スポット/GCP/元データ.pdf", rule: RULES.fileType },
+      ]);
     });
   });
 
   describe("教材のフォルダ", () => {
     it("入口がなければ見つける", () => {
       expect(
-        check({ "index.md": note("ホーム"), "Docker 入門/index_Docker入門.md": null }),
-      ).toEqual([{ file: "Docker 入門", rule: RULES.noEntry }]);
+        check({ "index.md": note("ホーム"), "資格/Docker 入門/index_Docker入門.md": null }),
+      ).toEqual([{ file: "資格/Docker 入門", rule: RULES.noEntry }]);
     });
 
     it("入口が2つあれば、両方を見つける", () => {
-      expect(check({ "Docker 入門/index_別.md": note("別") })).toEqual([
-        { file: "Docker 入門/index_Docker入門.md", rule: RULES.manyEntries },
-        { file: "Docker 入門/index_別.md", rule: RULES.manyEntries },
+      expect(check({ "資格/Docker 入門/index_別.md": note("別") })).toEqual([
+        { file: "資格/Docker 入門/index_Docker入門.md", rule: RULES.manyEntries },
+        { file: "資格/Docker 入門/index_別.md", rule: RULES.manyEntries },
       ]);
     });
 
     it("ガイドがなければ見つける", () => {
-      expect(check({ "Docker 入門/00_ガイド.md": null })).toEqual([
-        { file: "Docker 入門", rule: RULES.noGuide },
+      expect(check({ "資格/Docker 入門/00_ガイド.md": null })).toEqual([
+        { file: "資格/Docker 入門", rule: RULES.noGuide },
       ]);
     });
 
     it("章の番号の抜けを見つける", () => {
-      expect(check({ "Docker 入門/04_ネットワーク.md": note("ネットワーク") })).toEqual([
-        { file: "Docker 入門", rule: `${RULES.chapterGap}（03）` },
+      expect(check({ "資格/Docker 入門/04_ネットワーク.md": note("ネットワーク") })).toEqual([
+        { file: "資格/Docker 入門", rule: `${RULES.chapterGap}（03）` },
       ]);
     });
 
     it("01 から始まらない章を見つける", () => {
-      expect(check({ "Docker 入門/01_はじめに.md": null })).toEqual([
-        { file: "Docker 入門", rule: `${RULES.chapterGap}（01）` },
+      expect(check({ "資格/Docker 入門/01_はじめに.md": null })).toEqual([
+        { file: "資格/Docker 入門", rule: `${RULES.chapterGap}（01）` },
       ]);
     });
 
     it("章の番号の重なりを見つける", () => {
-      expect(check({ "Docker 入門/02_コンテナ.md": note("コンテナ") })).toEqual([
-        { file: "Docker 入門/02_イメージ.md", rule: RULES.chapterDuplicate },
-        { file: "Docker 入門/02_コンテナ.md", rule: RULES.chapterDuplicate },
+      expect(check({ "資格/Docker 入門/02_コンテナ.md": note("コンテナ") })).toEqual([
+        { file: "資格/Docker 入門/02_イメージ.md", rule: RULES.chapterDuplicate },
+        { file: "資格/Docker 入門/02_コンテナ.md", rule: RULES.chapterDuplicate },
       ]);
     });
 
     it("直下の章でないノートと画像を見つける", () => {
       expect(
         check({
-          "Docker 入門/メモ.md": note("メモ"),
-          "Docker 入門/構成.png": "png",
+          "資格/Docker 入門/メモ.md": note("メモ"),
+          "資格/Docker 入門/構成.png": "png",
         }),
       ).toEqual([
-        { file: "Docker 入門/メモ.md", rule: RULES.notChapter },
-        { file: "Docker 入門/構成.png", rule: RULES.notChapter },
+        { file: "資格/Docker 入門/メモ.md", rule: RULES.notChapter },
+        { file: "資格/Docker 入門/構成.png", rule: RULES.notChapter },
       ]);
     });
   });
 
   describe("title", () => {
     it("フロントマターがないノートを見つける", () => {
-      expect(check({ "Docker 入門/01_はじめに.md": "# はじめに\n" })).toEqual([
-        { file: "Docker 入門/01_はじめに.md", rule: RULES.noTitle },
+      expect(check({ "資格/Docker 入門/01_はじめに.md": "# はじめに\n" })).toEqual([
+        { file: "資格/Docker 入門/01_はじめに.md", rule: RULES.noTitle },
       ]);
     });
 
     it("title がないノートを見つける", () => {
-      expect(check({ "Docker 入門/01_はじめに.md": "---\ntags: [a]\n---\n" })).toEqual([
-        { file: "Docker 入門/01_はじめに.md", rule: RULES.noTitle },
+      expect(check({ "資格/Docker 入門/01_はじめに.md": "---\ntags: [a]\n---\n" })).toEqual([
+        { file: "資格/Docker 入門/01_はじめに.md", rule: RULES.noTitle },
       ]);
     });
 
     it("title が空のノートを見つける", () => {
-      expect(check({ "Docker 入門/01_はじめに.md": '---\ntitle: " "\n---\n' })).toEqual([
-        { file: "Docker 入門/01_はじめに.md", rule: RULES.noTitle },
+      expect(check({ "資格/Docker 入門/01_はじめに.md": '---\ntitle: " "\n---\n' })).toEqual([
+        { file: "資格/Docker 入門/01_はじめに.md", rule: RULES.noTitle },
       ]);
     });
   });
 
   describe("リンク切れ", () => {
-    const withBody = (body) => check({ "Docker 入門/01_はじめに.md": note("はじめに", body) });
+    const withBody = (body) => check({ "資格/Docker 入門/01_はじめに.md": note("はじめに", body) });
 
     it("ある先へのリンクと、# つきのリンクは通る", () => {
       expect(
@@ -180,13 +239,13 @@ describe("checkContent", () => {
 
     it("ない先へのリンクを見つける", () => {
       expect(withBody("[次](03_ない.md)")).toEqual([
-        { file: "Docker 入門/01_はじめに.md", rule: `${RULES.brokenLink}（03_ない.md）` },
+        { file: "資格/Docker 入門/01_はじめに.md", rule: `${RULES.brokenLink}（03_ない.md）` },
       ]);
     });
 
     it("content/ の外を指すリンクを見つける", () => {
       expect(withBody("[外](../../README.md)")).toEqual([
-        { file: "Docker 入門/01_はじめに.md", rule: `${RULES.brokenLink}（../../README.md）` },
+        { file: "資格/Docker 入門/01_はじめに.md", rule: `${RULES.brokenLink}（../../README.md）` },
       ]);
     });
 
@@ -200,18 +259,18 @@ describe("checkContent", () => {
 
     it("ある画像は通り、ない画像を見つける", () => {
       expect(withBody("![構成](図/構成.svg)\n\n![ない](図/ない.svg)")).toEqual([
-        { file: "Docker 入門/01_はじめに.md", rule: `${RULES.brokenImage}（図/ない.svg）` },
+        { file: "資格/Docker 入門/01_はじめに.md", rule: `${RULES.brokenImage}（図/ない.svg）` },
       ]);
     });
   });
 
   describe("表示できない書き方", () => {
-    const withBody = (body) => check({ "Docker 入門/01_はじめに.md": note("はじめに", body) });
+    const withBody = (body) => check({ "資格/Docker 入門/01_はじめに.md": note("はじめに", body) });
 
     it("本文の [[ ]] と ![[ ]] を、行の番号つきで見つける", () => {
       expect(withBody("[[02_イメージ]] を読む\n\n![[構成.svg]]")).toEqual([
-        { file: "Docker 入門/01_はじめに.md", rule: `${RULES.wikiLink}（5 行目）` },
-        { file: "Docker 入門/01_はじめに.md", rule: `${RULES.wikiLink}（7 行目）` },
+        { file: "資格/Docker 入門/01_はじめに.md", rule: `${RULES.wikiLink}（5 行目）` },
+        { file: "資格/Docker 入門/01_はじめに.md", rule: `${RULES.wikiLink}（7 行目）` },
       ]);
     });
 
@@ -229,18 +288,18 @@ describe("runCheck", () => {
     return { code, lines };
   }
 
-  const broken = () => makeContent({ ...validContent(), "Docker 入門/00_ガイド.md": null });
+  const broken = () => makeContent({ ...validContent(), "資格/Docker 入門/00_ガイド.md": null });
 
   it("引数のフォルダを検査し、合わないものを <フォルダ>/<ファイル> の形で出して 1 を返す", () => {
     const { code, lines } = run({ args: [broken()], env: { CONTENT_DIR: "ない" } });
     expect(code).toBe(1);
-    expect(lines.slice(1)).toEqual([`  ${dirs.at(-1)}/Docker 入門  ${RULES.noGuide}`]);
+    expect(lines.slice(1)).toEqual([`  ${dirs.at(-1)}/資格/Docker 入門  ${RULES.noGuide}`]);
   });
 
   it("引数がなければ CONTENT_DIR を検査する", () => {
     const dir = broken();
     expect(run({ env: { CONTENT_DIR: `${dir}/` } }).lines.slice(1)).toEqual([
-      `  ${dir}/Docker 入門  ${RULES.noGuide}`,
+      `  ${dir}/資格/Docker 入門  ${RULES.noGuide}`,
     ]);
   });
 
