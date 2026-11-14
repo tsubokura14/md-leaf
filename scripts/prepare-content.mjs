@@ -9,8 +9,7 @@ import { runCheck } from "./check-content.mjs";
 
 const CONTENT = "content";
 // 保管庫を取る一時のフォルダと、保管庫の中のコンテンツフォルダ。
-// 保管庫を丸ごと content/ にせず notes/ だけを移すのは、notes/ の外（README.md・.claude/ など）を
-// 読まず・検査せず・サーバーの出力に入れないため。content/ に移せば、出力の追跡と Proxy の作りを変えずに済む
+// notes/ だけを content/ に移す理由は docs/design.md の「ノートはビルドの最初に保管庫から取ってくる」
 const VAULT_DIR = ".vault";
 const VAULT_NOTES = "notes";
 

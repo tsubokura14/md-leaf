@@ -43,8 +43,7 @@ const NOTE_EXTENSION = ".md";
 
 const collator = new Intl.Collator("ja", { numeric: true });
 
-// 分類の名前と順は note-categories.json の1か所に置き、検査（scripts/check-content.mjs）も同じものを読む。
-// 書き写すと「検査に通るのに並ばない」ずれが起きるため（.mjs は .ts を読めないので JSON にした）
+// 分類の名前と順は note-categories.json（理由は docs/design.md の「保管庫には決まりに合うものだけを置く」）
 const categoryOrder: readonly string[] = noteCategories.order;
 
 // 一番上のフォルダだけ、分類の順に並べる。分類にない名前は、分類のあとに名前の順で並べる。

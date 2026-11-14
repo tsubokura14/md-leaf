@@ -217,6 +217,9 @@ function checkNote(file, source, noteSet, imageSet, problems) {
  * @param {string} root コンテンツフォルダ
  * @returns {{ file: string, rule: string }[]} file はコンテンツフォルダからのパス。file の順
  */
+// 教材を置く分類は、順の一覧からテーマを置く分類を除いたもの（一覧を2つだけにして、ずれないようにする）
+const courseCategories = categories.order.filter((name) => !categories.themeCategories.includes(name));
+
 export function checkContent(root) {
   const problems = [];
   const notes = [];
@@ -224,7 +227,7 @@ export function checkContent(root) {
   const entryNotes = [];
 
   for (const entry of listEntries(root, "", problems)) {
-    if (entry.isDir && categories.courseCategories.includes(entry.name)) {
+    if (entry.isDir && courseCategories.includes(entry.name)) {
       for (const child of listEntries(root, entry.path, problems)) {
         if (!child.isDir) {
           problems.push({ file: child.path, rule: RULES.courseCategoryFile });
