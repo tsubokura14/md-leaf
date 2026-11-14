@@ -62,8 +62,8 @@ for c in $(git rev-list --all); do git ls-tree -r --name-only "$c"; done | grep 
 # メールアドレス → GitHub の noreply（本人のものと、Squash merge のコミッターの noreply@github.com）、noreply@anthropic.com、@example.com だけ（@AGENTS.md などは CLAUDE.md の取り込みの書き方）
 git log --all --format='%ae%n%ce' | sort -u
 git log --all -p | grep -oiE '[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}' | sort -u
-# 手元のパス → 0（仕様ファイルの「個人情報」の行にある例 `C:/Users/...` は外す）
-git log --all -p | grep -E 'C:[/\\]Users' | grep -vc 'C:/Users/\.\.\.'
+# 手元のパス → 0（`C:/Users/` のあとに英字が続くものだけを数える。仕様ファイルの例 `C:/Users/...` と、この検査の前の版の行は当たらない）
+git log --all -p | grep -cE 'C:[/\\]Users[/\\][A-Za-z]'
 # ブランチは main だけ、タグはない
 git for-each-ref --format='%(refname)'
 ```
@@ -144,7 +144,8 @@ gh repo edit tsubokura14/md-leaf --visibility public --accept-visibility-change-
 ```bash
 cd <アプリのフォルダの親>
 mv md-leaf md-leaf-archive
-git -C md-leaf-archive worktree repair
+# worktree の側からのつながりも直すため、worktree のフォルダを並べて渡す（git -C md-leaf-archive worktree list で出たもの）
+git -C md-leaf-archive worktree repair <worktree のフォルダ…>
 git clone https://github.com/tsubokura14/md-leaf.git md-leaf
 cd md-leaf && npm install
 bash scripts/setup-github.sh
@@ -152,7 +153,7 @@ bash scripts/setup-github.sh
 
 - `scripts/setup-github.sh` は、Squash merge だけ・マージしたブランチを消す・main の保護・push protection を設定し、最後に `scripts/link-template.sh` で Git のフックを有効にして、remote `template` を足す。公開したので、main の保護と push protection も「設定しました」と出る
 - `.env.local` は古いフォルダからコピーする（リポジトリには入っていない）
-- `mv` で失敗したら（ほかのプログラムがフォルダを使っている）、エディタ・ターミナル・Claude Code を閉じてからやり直す
+- `mv` で失敗したら（「Device or resource busy」。ほかのプログラムがフォルダを使っている）、`md-leaf` を開いているエディタ・エクスプローラー・ターミナルを閉じ、Claude のアプリで `md-leaf` を作業場所にした会話をアーカイブしてからやり直す。アプリは、アーカイブしていない会話のフォルダを、動いていなくてもつかんでいることがある（2026-11-14 はこれが原因だった）
 
 ## 確かめ C：GitHub の設定とテンプレートとのつながり
 
@@ -184,18 +185,18 @@ git config core.hooksPath   # .githooks
 
 ## やったことの記録
 
-公開したあと、記録の PR で埋める。
+2026-11-14 に行った。
 
 | 手順 | 日付 | 結果 |
 | --- | --- | --- |
-| 1. 書き換える | | |
-| 確かめ A（書き換えたクローン） | | |
-| 2. 古いリポジトリの名前を変える | | |
-| 3. 新しいリポジトリを作る | | |
-| 4. main を push する・確かめ A（取り直したクローン） | | |
-| 5. Vercel のつながりを変える | | |
-| 確かめ B | | |
-| 6. 公開する | | |
-| 7. 手元の切り替え・確かめ C | | |
-| 8. 記録の PR | | |
-| 9. 片付ける | | |
+| 1. 書き換える | 2026-11-14 | 古いリポジトリの main（`66a1770`、この手順書の PR を取り込んだもの）を書き換えた。21 コミット → 20（「ノートを content/ に追加する (#26)」が消えた）。最後の版の中身は、main から `content/` を除いたものと一致。`content/` にあったファイルの中身は 121 個 |
+| 確かめ A（書き換えたクローン） | 2026-11-14 | 通った。`content/` 0、残った中身は長さ0のファイルのもの（`e69de29`）だけ、トークン 0、`.env` は `.env.example` だけ、メールアドレスは noreply と `@example.com` だけ、ref は main だけ。手元のパスの検査は、検査のコマンドの前の版の行自身に当たって 1 になった（本物のパスではない。この PR で式を直した） |
+| 2. 古いリポジトリの名前を変える | 2026-11-14 | `tsubokura14/md-leaf-archive`（非公開）にした。手元の古いクローンの `origin` を向け直した。古いリポジトリには、使っていないブランチ `7-theme-toggle` が残っている（持ち込んでいない） |
+| 3. 新しいリポジトリを作る | 2026-11-14 | `tsubokura14/md-leaf` を非公開で作った |
+| 4. main を push する・確かめ A（取り直したクローン） | 2026-11-14 | 人が push した。main の先頭は `cfa17e1`。ブランチは main だけ、PR 0件、タグ 0件。取り直したクローンで確かめ A が通った |
+| 5. Vercel のつながりを変える | 2026-11-14 | 人が画面でつなぎ直した。Deploy Hook は残っていた（作り直しと保管庫の secret の入れ替えは要らなかった） |
+| 確かめ B | 2026-11-14 | 通った。保管庫のワークフローを手で流して成功し、新しいリポジトリの main で本番がビルドされた。本番でログイン・ノートの表示、保管庫の push からの反映を人が確かめた |
+| 6. 公開する | 2026-11-14 | Public にした。ログインしていない状態で開けることを確かめた |
+| 7. 手元の切り替え・確かめ C | 2026-11-14 | 古いフォルダを `md-leaf-archive` に名前を変えた（Claude のアプリの会話がフォルダをつかんでいて、アーカイブするまで失敗した）。worktree のつながりを直し、新しいリポジトリを `md-leaf` にクローンした。`scripts/setup-github.sh` で main の保護と push protection が設定でき、確かめ C が通った |
+| 8. 記録の PR | 2026-11-14 | この PR |
+| 9. 片付ける | | 古い作業フォルダと worktree は、人が確かめてから消す |
