@@ -95,7 +95,7 @@ test.describe("ログインの画面のライト/ダーク", () => {
   });
 });
 
-const GIT_NOTE = "/notes/開発/Git ブランチの運用メモ";
+const GIT_NOTE = "/notes/実践/開発/Git ブランチの運用メモ";
 
 function toggle(page: Page, name: "ダークにする" | "ライトにする") {
   return page.getByRole("banner").getByRole("button", { name });

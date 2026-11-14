@@ -6,7 +6,7 @@ import { allowedTestEmail } from "./test-env";
 
 // src/components/reading-size.ts の READING_SIZE_KEY と同じ。テストはアプリのコードを読み込まないので、ここにも書く
 const READING_SIZE_KEY = "md-leaf-reading-size";
-const GIT_NOTE = "/notes/開発/Git ブランチの運用メモ";
+const GIT_NOTE = "/notes/実践/開発/Git ブランチの運用メモ";
 
 /** ページのスクリプトより前に、ブラウザに選んだ大きさを保存しておく */
 async function saveReadingSize(page: Page, size: string) {
@@ -123,7 +123,7 @@ test.describe("上の帯の「Aa」を出す画面", () => {
   });
 
   test("ノートが見つからない画面では「Aa」が出ない", async ({ page }) => {
-    await page.goto("/notes/開発/ないノート");
+    await page.goto("/notes/実践/開発/ないノート");
     await expect(page.getByRole("heading", { name: "ノートが見つかりません" })).toBeVisible();
     await expect(sizeButton(page)).toBeHidden();
   });
@@ -136,6 +136,7 @@ test.describe("上の帯の「Aa」を出す画面", () => {
     const shell = waitForAppShell(page, (path) => path.startsWith("/notes/"));
     await clickWhenHydrated(page.getByRole("button", { name: "ノートの一覧を開く" }));
     const drawer = page.getByRole("dialog", { name: "ノートの一覧" });
+    await drawer.getByRole("button", { name: "実践" }).click();
     await drawer.getByRole("button", { name: "開発" }).click();
     await shell;
     await drawer.getByRole("link", { name: "Git ブランチの運用メモ" }).click();

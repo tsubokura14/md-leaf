@@ -112,7 +112,7 @@ test.describe("ログインしているかでの移動", () => {
   for (const path of [
     "/",
     "/notes/x",
-    `/notes/${encodeURIComponent("開発")}/${encodeURIComponent("Git ブランチの運用メモ")}`,
+    `/notes/${encodeURIComponent("実践")}/${encodeURIComponent("開発")}/${encodeURIComponent("Git ブランチの運用メモ")}`,
     "/no-such-page",
   ]) {
     test(`ログインしていなければ、${path} はログインの画面へ移り、本文を返さない`, async ({
