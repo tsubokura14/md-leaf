@@ -74,14 +74,30 @@
 
 ## 設計
 
+- 変えるファイル：`src/lib/markdown.ts`（変換に2つのプラグインを足す）、`src/lib/markdown.test.ts`（テスト）、`package.json`、`docs/specs/notes.md`（段落の改行と日本語の強調の読み方）、`docs/libraries/remark-breaks.md`・`docs/libraries/remark-cjk-friendly.md`（下書き）、テスト用のノート `e2e/fixtures/content/` に改行と強調の例を足すなら、撮り直す画像
+- データの変更：なし
+- remark-cjk-friendly は読み込み（micromark）の拡張なので、`remarkParse` の直後に置く。見出しの中の太字も同じ読み込みを通るので、目次（`headings.ts` は HTML の文字を集める）も同じ読み方になる
+- remark-breaks は `callouts` の後に置く。`callouts.ts` はコールアウトの1行目を文字の中の `
+` で見つけるので、先に改行を `break` にすると1行目の次の行が題に入る。コードと数式のブロックは `text` ではないので変わらない。表のセルは1行なので改行がない
+- 理由（順番）は `src/lib/markdown.ts` の `.use()` の隣のコメントに残す
+
 ## AIが決めたこと
 
 - プロトタイプは作らない。画面の作りが変わらず、本文の読み方だけの変更のため
 
 ## 確かめ方
 
-<!-- /dev-build で書く -->
+| 受け入れ条件 | 確かめ方 |
+| --- | --- |
+| 段落・リスト・コールアウトの中の1つの改行が改行になる | テスト（`src/lib/markdown.test.ts`） |
+| 空の行で分けたものは別の段落 | テスト |
+| コード・数式のブロックの中は変わらない | テスト |
+| コールアウトの1行目の次の行は中身になる | テスト |
+| 閉じの強調の直前が日本語の括弧・句読点でも太字・斜体になる | テスト（3つの例と `*`・`__`・`_`） |
+| 英語だけの文の太字・斜体は変わらない | テスト |
+| 目次の見出しも同じ読み方 | テスト（`headings` の文字） |
+| `>` だけの行で区切ったノートは見た目が変わらない | テスト（`>` だけの行を挟んだ選択肢が、前と同じ別々の段落になる） |
 
 ## タスク
 
-<!-- /dev-build で書く -->
+- [ ] 1つの改行を改行にし、日本語の括弧・句読点の前後の強調を読めるようにする（remark-breaks・remark-cjk-friendly を入れ、`markdown.ts` に足し、テスト・`docs/specs/notes.md`・`docs/libraries/` の下書きを書く。画像を比べるテストが変わったら、本文の画面 `note-*.png`・`home-index*.png` を撮り直す）
