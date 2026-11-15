@@ -26,7 +26,7 @@ export function NoteBody({ title, html, headings }: NoteBodyProps) {
       {/* 広い PC では、本文と右の目次を横に並べ、2つを合わせた幅で中央に寄せる */}
       <div
         className="
-          xl:flex xl:justify-center xl:gap-16
+          xl:flex xl:justify-center xl:gap-10
         "
       >
         {/* .reading は本文の文字の大きさ（tokens.css）を当てる場所で、上の帯の「Aa」を出す目印にもなる
@@ -35,7 +35,7 @@ export function NoteBody({ title, html, headings }: NoteBodyProps) {
         <article
           className="
             reading mx-auto max-w-prose font-body
-            xl:mx-0 xl:min-w-0 xl:flex-1
+            xl:mx-0 xl:max-w-wide xl:min-w-0 xl:flex-1
           "
         >
           <h1 className="text-2xl leading-tight font-bold">{title}</h1>
