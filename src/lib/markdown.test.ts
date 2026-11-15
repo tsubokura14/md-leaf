@@ -248,3 +248,69 @@ describe("renderMarkdown", () => {
     expect(result.html).toContain('<td class="col-l">短い</td>');
   });
 });
+
+describe("1つの改行（Obsidian と同じく改行にする）", () => {
+  test("段落の中の1つの改行は <br> になる", () => {
+    expect(renderMarkdown("1行目\n2行目\n").html).toBe("<p>1行目<br>\n2行目</p>");
+  });
+
+  test("空の行で分けたものは別の段落になる", () => {
+    expect(renderMarkdown("1つ目\n\n2つ目\n").html).toBe("<p>1つ目</p>\n<p>2つ目</p>");
+  });
+
+  test("リストの項目の中の1つの改行は <br> になる", () => {
+    expect(renderMarkdown("- 項目\n  続き\n").html).toBe("<ul>\n<li>項目<br>\n続き</li>\n</ul>");
+  });
+
+  test("引用の中の選択肢は1行ずつ分かれる", () => {
+    expect(renderMarkdown("> ① あ\n> ② い\n").html).toBe(
+      "<blockquote>\n<p>① あ<br>\n② い</p>\n</blockquote>",
+    );
+  });
+
+  test("> だけの行で区切った選択肢は、前と同じ別々の段落になる", () => {
+    expect(renderMarkdown("> ① あ\n>\n> ② い\n").html).toBe(
+      "<blockquote>\n<p>① あ</p>\n<p>② い</p>\n</blockquote>",
+    );
+  });
+
+  test("コールアウトの1行目の次の行は中身になり、中身の1つの改行は <br> になる", () => {
+    const html = renderMarkdown("> [!tip] 題\n> 1行目\n> 2行目\n").html;
+    expect(html).toContain("題");
+    expect(html).toContain("<p>1行目<br>\n2行目</p>");
+    expect(html).not.toMatch(/題<br>/);
+  });
+
+  test("コードのブロックの中は変わらない", () => {
+    const html = renderMarkdown("```\na\nb\n```\n").html;
+    expect(html).not.toContain("<br>");
+    expect(html).toContain("a\nb");
+  });
+
+  test("数式のブロックの中は変わらない", () => {
+    const html = renderMarkdown("$$\na\n\\\nb\n$$\n").html;
+    expect(html).not.toContain("<br>");
+  });
+});
+
+describe("日本語の括弧・句読点の前後の強調", () => {
+  test.each([
+    ["**用語（読み）**とは", "<p><strong>用語（読み）</strong>とは</p>"],
+    ["**「〜」**の", "<p><strong>「〜」</strong>の</p>"],
+    ["**終わり。**次", "<p><strong>終わり。</strong>次</p>"],
+    ["*用語（読み）*とは", "<p><em>用語（読み）</em>とは</p>"],
+  ])("%s", (source, html) => {
+    expect(renderMarkdown(`${source}\n`).html).toBe(html);
+  });
+
+  test("英語だけの文の太字・斜体は変わらない", () => {
+    expect(renderMarkdown("a **b** c *d* snake_case_name **x**y\n").html).toBe(
+      "<p>a <strong>b</strong> c <em>d</em> snake_case_name <strong>x</strong>y</p>",
+    );
+  });
+
+  test("目次の見出しの文字も同じ読み方になる", () => {
+    const result = renderMarkdown("## **CI（継続的インテグレーション）**とは\n");
+    expect(result.headings.map((h) => h.text)).toEqual(["CI（継続的インテグレーション）とは"]);
+  });
+});
