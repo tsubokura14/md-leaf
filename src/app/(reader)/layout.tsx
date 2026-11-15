@@ -24,7 +24,7 @@ export default async function ReaderLayout({ children }: LayoutProps<"/">) {
         aria-label="ノートの一覧"
         className="
           hidden
-          lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-72 lg:shrink-0 lg:flex-col
+          lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-80 lg:shrink-0 lg:flex-col
           lg:border-r lg:border-border
         "
       >
