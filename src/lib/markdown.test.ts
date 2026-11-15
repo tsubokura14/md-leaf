@@ -230,6 +230,21 @@ describe("renderMarkdown", () => {
   test("表は、横にスクロールする枠（div.table-scroll）で包み、列の揃えを残す", () => {
     const result = renderMarkdown("| a | b |\n| --- | :-: |\n| 1 | 2 |\n");
     expect(result.html).toMatch(/^<div class="table-scroll"><table>[\s\S]*<\/table><\/div>$/);
-    expect(result.html).toContain('<th align="center">b</th>');
+    expect(result.html).toContain('<th align="center" class="col-s">b</th>');
+  });
+
+  test("表の列は、いちばん長いセルの文字数（全角2・半角1）で、短い・中くらい・長いの段階のクラスが付く", () => {
+    const long = "あ".repeat(20);
+    const result = renderMarkdown(
+      `| 名前 | 説明 | 備考 |
+| --- | --- | --- |
+| Free | ${long} | 月に50回まで |
+| Pro | 短い | x |
+`,
+    );
+    expect(result.html).toContain('<th class="col-s">名前</th>');
+    expect(result.html).toContain('<th class="col-l">説明</th>');
+    expect(result.html).toContain('<th class="col-m">備考</th>');
+    expect(result.html).toContain('<td class="col-l">短い</td>');
   });
 });
