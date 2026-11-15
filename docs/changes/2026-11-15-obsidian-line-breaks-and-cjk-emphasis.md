@@ -103,4 +103,4 @@
 
 ## タスク
 
-- [ ] 1つの改行を改行にし、日本語の括弧・句読点の前後の強調を読めるようにする（remark-breaks・remark-cjk-friendly を入れ、`markdown.ts` に足し、テスト・`docs/specs/notes.md`・`docs/libraries/` の下書きを書く。画像を比べるテストが変わったら、本文の画面 `note-*.png`・`home-index*.png` を撮り直す）
+- [x] 1つの改行を改行にし、日本語の括弧・句読点の前後の強調を読めるようにする（remark-breaks・remark-cjk-friendly を入れ、`markdown.ts` に足し、テスト・`docs/specs/notes.md`・`docs/libraries/` の下書きを書く。画像を比べるテストが変わったら、本文の画面 `note-*.png`・`home-index*.png` を撮り直す）
