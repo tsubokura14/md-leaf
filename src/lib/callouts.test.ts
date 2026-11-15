@@ -16,14 +16,14 @@ function titleOf(html: string): string | undefined {
 }
 
 describe("コールアウト", () => {
-  test("[!種類] で始まる引用を、題と中身のあるコールアウトにする。題がなければ種類名", () => {
+  test("[!種類] で始まる引用を、題と中身のあるコールアウトにする。題がなければ種類ごとの日本語の題", () => {
     const { html } = renderMarkdown("> [!tip]\n> main には直接コミットしない。\n");
     expect(html).not.toContain("<blockquote");
     expect(html).not.toContain("[!tip]");
     expect(openingTags(html)).toEqual(['<div class="callout" data-callout="tip">']);
     expect(html).toContain('<div class="callout-title">');
     expect(html).toMatch(/<div class="callout-title"><svg[^>]*class="callout-icon"/);
-    expect(titleOf(html)).toBe("Tip");
+    expect(titleOf(html)).toBe("ヒント");
     expect(html).toContain(
       '<div class="callout-content">\n<p>main には直接コミットしない。</p>\n</div>',
     );
@@ -38,7 +38,7 @@ describe("コールアウト", () => {
   test("種類の大文字・小文字は区別しない", () => {
     const { html } = renderMarkdown("> [!TIP]\n> 中身\n");
     expect(openingTags(html)).toEqual(['<div class="callout" data-callout="tip">']);
-    expect(titleOf(html)).toBe("Tip");
+    expect(titleOf(html)).toBe("ヒント");
   });
 
   test.each([
@@ -117,20 +117,44 @@ describe("コールアウト", () => {
     },
   );
 
-  test("題がないときは種類名（例：Important）", () => {
-    expect(titleOf(renderMarkdown("> [!important]\n> 中身\n").html)).toBe("Important");
-    expect(titleOf(renderMarkdown("> [!bug]\n> 中身\n").html)).toBe("Bug");
-  });
-
-  test("別名の題は、書いた別名の先頭を大文字にしたもの", () => {
-    const { html } = renderMarkdown("> [!hint]\n> 中身\n");
-    expect(titleOf(html)).toBe("Hint");
+  test.each([
+    ["abstract", "概要"],
+    ["summary", "概要"],
+    ["tldr", "概要"],
+    ["info", "情報"],
+    ["note", "メモ"],
+    ["todo", "やること"],
+    ["quote", "引用"],
+    ["cite", "引用"],
+    ["example", "例"],
+    ["tip", "ヒント"],
+    ["hint", "ヒント"],
+    ["important", "重要"],
+    ["question", "質問"],
+    ["help", "質問"],
+    ["faq", "質問"],
+    ["success", "成功"],
+    ["check", "成功"],
+    ["done", "成功"],
+    ["failure", "失敗"],
+    ["fail", "失敗"],
+    ["missing", "失敗"],
+    ["bug", "バグ"],
+    ["warning", "注意"],
+    ["attention", "注意"],
+    ["caution", "警告"],
+    ["danger", "危険"],
+    ["error", "危険"],
+  ])("題がないときは、書いた種類名（%s）ごとの日本語の題（%s）", (kind, title) => {
+    expect(titleOf(renderMarkdown(callout(kind)).html)).toBe(title);
+    expect(titleOf(renderMarkdown(callout(kind.toUpperCase())).html)).toBe(title);
   });
 
   test("知らない種類は note の色とアイコンで、題は書いた種類名", () => {
     const { html } = renderMarkdown("> [!memo]\n> 中身\n");
     expect(openingTags(html)).toEqual(['<div class="callout" data-callout="note">']);
     expect(titleOf(html)).toBe("memo");
+    expect(titleOf(renderMarkdown(callout("constructor")).html)).toBe("constructor");
   });
 
   test("[!種類]- は、矢印つきの閉じた details にする", () => {
