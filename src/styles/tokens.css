@@ -68,7 +68,7 @@
   --reading-size: 16px;
 }
 /* 表の列の幅（中くらい・長い列）。表の文字の大きさに合わせて em で書く。
-   段階の境目は src/lib/tables.ts。本番のスマホで表を見て調整する値（Issue #19） */
+   段階の境目と、値の決め方は src/lib/tables.ts */
 :root {
   --table-col-m: 7em;
   --table-col-l: 13em;
