@@ -215,11 +215,41 @@ function trimTitle(title: PhrasingContent[]): PhrasingContent[] {
   return trimmed.filter((node) => node.type !== "text" || node.value !== "");
 }
 
+// 題を書かないときの題。書いた種類名（別名を含む）ごとに決める（docs/specs/notes.md の「本文のブロック」）。
+// 色・アイコンは本来の種類で決まるが、題は書いた名前で分ける（todo は note の色でも「やること」）
+const titleOfName: Record<string, string> = {
+  abstract: "概要",
+  summary: "概要",
+  tldr: "概要",
+  info: "情報",
+  note: "メモ",
+  todo: "やること",
+  quote: "引用",
+  cite: "引用",
+  example: "例",
+  tip: "ヒント",
+  hint: "ヒント",
+  important: "重要",
+  question: "質問",
+  help: "質問",
+  faq: "質問",
+  success: "成功",
+  check: "成功",
+  done: "成功",
+  failure: "失敗",
+  fail: "失敗",
+  missing: "失敗",
+  bug: "バグ",
+  warning: "注意",
+  attention: "注意",
+  caution: "警告",
+  danger: "危険",
+  error: "危険",
+};
+
 function defaultTitle(kind: string): string {
-  const lower = kind.toLowerCase();
   // 知らない種類は、書いたままの種類名を題にする
-  if (!(lower in kindOfName)) return kind;
-  return lower.charAt(0).toUpperCase() + lower.slice(1);
+  return titleOfName[kind.toLowerCase()] ?? kind;
 }
 
 function toCallout(node: Blockquote, header: Header): Blockquote {
