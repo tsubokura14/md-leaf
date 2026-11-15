@@ -154,6 +154,7 @@ describe("コールアウト", () => {
     const { html } = renderMarkdown("> [!memo]\n> 中身\n");
     expect(openingTags(html)).toEqual(['<div class="callout" data-callout="note">']);
     expect(titleOf(html)).toBe("memo");
+    expect(titleOf(renderMarkdown(callout("constructor")).html)).toBe("constructor");
   });
 
   test("[!種類]- は、矢印つきの閉じた details にする", () => {

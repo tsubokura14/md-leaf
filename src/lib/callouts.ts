@@ -249,7 +249,9 @@ const titleOfName: Record<string, string> = {
 
 function defaultTitle(kind: string): string {
   // 知らない種類は、書いたままの種類名を題にする
-  return titleOfName[kind.toLowerCase()] ?? kind;
+  // Object.hasOwn で見る（[!constructor] などで、Object の関数が題にならないように）
+  const lower = kind.toLowerCase();
+  return Object.hasOwn(titleOfName, lower) ? titleOfName[lower] : kind;
 }
 
 function toCallout(node: Blockquote, header: Header): Blockquote {
