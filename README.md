@@ -157,7 +157,7 @@ Vercel のプロジェクトの「Settings」→「Environment Variables」で�
 | [docs/design.md](docs/design.md) | アプリが今どう作られているか（複数の場所に関わる決まりと、その理由） |
 | [docs/vault.md](docs/vault.md) | 学習用の保管庫とつなぐ手順（鍵・Deploy Hook）と、鍵が切れたときの直し方 |
 | [docs/publish.md](docs/publish.md) | このリポジトリを、ノートを履歴から消して公開した手順と記録 |
-| [docs/content-rules.md](docs/content-rules.md) | 保管庫に教材を置くときの決まりと、足し方・検査・精査 |
+| [docs/content-rules.md](docs/content-rules.md) | 保管庫に教材を置くときの決まりと、足し方・検査 |
 | [docs/ui.md](docs/ui.md) | 見た目の決まり（色・余白・文字・部品の使い分け） |
 | [docs/changes/](docs/changes/) | 機能ごとの変更の記録（何を・なぜ・どう変えたか） |
 | [docs/libraries/](docs/libraries/) | コードを読むために必要なライブラリの前提知識 |
