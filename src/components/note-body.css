@@ -137,6 +137,28 @@
   font-size: var(--text-sm);
   line-height: var(--leading-normal);
   overflow-wrap: normal;
+  line-break: strict;
+}
+
+/* 列の幅（段階のクラスは src/lib/tables.ts がビルドのときに付ける）。
+   表の幅は 100% のままでも、列の最小の幅の合計が画面より広ければ表が広がり、枠の中で横にスクロールする。
+   セルの width は、自動の表の組み方では列の最小の幅として効くので、長い列が押しつぶされない */
+.note-body .col-s {
+  white-space: nowrap;
+}
+
+.note-body .col-m {
+  width: var(--table-col-m);
+}
+
+.note-body .col-l {
+  width: var(--table-col-l);
+}
+
+/* 長い英数字（コード・URL）は、列の幅の中で折り返す */
+.note-body td > code,
+.note-body td > a {
+  overflow-wrap: anywhere;
 }
 
 .note-body th,
