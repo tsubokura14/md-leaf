@@ -1,6 +1,8 @@
 import type { Element, ElementContent, Root as HastRoot } from "hast";
 import type { Html, Root as MdastRoot } from "mdast";
 import rehypeStringify from "rehype-stringify";
+import remarkBreaks from "remark-breaks";
+import remarkCjkFriendly from "remark-cjk-friendly";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -140,11 +142,17 @@ function noteLinks() {
 
 const processor = unified()
   .use(remarkParse)
+  // 閉じの強調の直前が日本語の括弧・句読点でも強調にする（Obsidian と同じ読み方）。読み込み（micromark）の拡張なので
+  // 読み込みのすぐ後に置く。見出しの中も同じ読み込みを通るので、目次（headings.ts）も同じ読み方になる
+  .use(remarkCjkFriendly)
   .use(remarkFrontmatter, ["yaml"])
   .use(extractFrontmatter)
   .use(remarkGfm)
   .use(remarkMath)
   .use(callouts)
+  // 1つの改行を改行にする（Obsidian の既定）。callouts の後に置く：callouts.ts はコールアウトの1行目を文字の中の
+  // 改行で見つけるので、先に改行を break にすると、1行目の次の行が題に入る
+  .use(remarkBreaks)
   .use(remarkRehype, { handlers: { html: htmlAsText } })
   .use(externalLinksInNewTab)
   .use(noteLinks)

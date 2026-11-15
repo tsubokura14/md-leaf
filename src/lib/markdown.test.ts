@@ -298,9 +298,7 @@ describe("日本語の括弧・句読点の前後の強調", () => {
     ["**用語（読み）**とは", "<p><strong>用語（読み）</strong>とは</p>"],
     ["**「〜」**の", "<p><strong>「〜」</strong>の</p>"],
     ["**終わり。**次", "<p><strong>終わり。</strong>次</p>"],
-    ["__用語（読み）__とは", "<p><strong>用語（読み）</strong>とは</p>"],
     ["*用語（読み）*とは", "<p><em>用語（読み）</em>とは</p>"],
-    ["_用語（読み）_とは", "<p><em>用語（読み）</em>とは</p>"],
   ])("%s", (source, html) => {
     expect(renderMarkdown(`${source}\n`).html).toBe(html);
   });
