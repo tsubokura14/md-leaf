@@ -94,7 +94,7 @@ function TocContents({
   return (
     <>
       <p className="shrink-0 px-3 pb-2 font-ui text-xs font-bold text-muted">目次</p>
-      <ul className="min-h-0 overflow-y-auto">
+      <ul className="min-h-0 overflow-x-hidden overflow-y-auto">
         {headings.map((heading) => (
           <li key={heading.id}>
             <button
@@ -102,7 +102,7 @@ function TocContents({
               onClick={(event) => onSelect(event.currentTarget, heading.id)}
               className={`
                 block w-full rounded-md py-2 pr-3 text-left font-ui text-sm
-                leading-normal transition-colors
+                leading-normal wrap-anywhere transition-colors
                 hover:bg-surface
                 ${heading.depth === 3 ? "pl-7 text-muted" : "pl-3"}
               `}
@@ -156,7 +156,7 @@ export function NoteToc({ headings }: { headings: NoteHeading[] }) {
         aria-label="目次"
         className="
           toc-side hidden
-          xl:sticky xl:top-24 xl:flex xl:w-56 xl:shrink-0 xl:flex-col
+          xl:sticky xl:top-24 xl:flex xl:w-48 xl:shrink-0 xl:flex-col
           xl:self-start
         "
       >
