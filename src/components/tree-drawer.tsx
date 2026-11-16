@@ -99,7 +99,8 @@ export function TreeDrawer({ tree, footer }: TreeDrawerProps) {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            <NoteTree tree={tree} onNavigate={() => setOpen(false)} />
+            {/* 押したときではなく、ページが切り替わってから閉じる。押してすぐ閉じると、待つ間の行の印（PendingDot）が見えないため */}
+            <NoteTree tree={tree} onNavigated={() => setOpen(false)} />
           </div>
           {footer}
         </div>

@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { ChevronIcon, HomeIcon } from "@/components/icons";
 import { NOTE_PREFIX, noteHref } from "@/lib/note-url";
 import type { NoteTree as NoteTreeData, NoteTreeEntry, NoteTreeFolder } from "@/lib/notes";
@@ -49,16 +49,38 @@ export function usePlace(tree: NoteTreeData): string[] {
 }
 
 const rowClass = `
-  flex w-full items-start gap-2 rounded-md px-2 py-2 text-left leading-normal
+  relative flex w-full items-start gap-2 rounded-md px-2 py-2 text-left leading-normal
   transition-colors
   hover:bg-surface
 `;
 const currentClass = "bg-accent/10 font-bold text-accent hover:bg-accent/10";
 
+/**
+ * 押したリンクの移動を待つ間だけ、行の右端に出す点（docs/ui.md の「状態の見せ方」）。
+ * useLinkStatus は <Link> の子でしか使えないので、行の中に置く部品にする。
+ * 行の高さと名前の折り返しの幅を変えないよう、行（relative）の右の余白（px-2）の中、1行目の高さに absolute で置く。
+ * 枠はいつも置き、点の見え方だけを切り替える
+ */
+function PendingDot() {
+  const { pending } = useLinkStatus();
+  return (
+    <span
+      data-pending-dot=""
+      role={pending ? "status" : undefined}
+      aria-label={pending ? "読み込み中" : undefined}
+      aria-hidden={pending ? undefined : true}
+      className={`
+        absolute top-3.5 right-0.5 size-1.5 rounded-full bg-accent
+        ${pending ? "motion-safe:animate-pulse" : "opacity-0"}
+      `}
+    />
+  );
+}
+
 type NoteTreeProps = {
   tree: NoteTreeData;
-  /** ノート・「ホーム」を押したとき（スマホでは一覧を閉じる） */
-  onNavigate?: () => void;
+  /** ページが切り替わったとき（押したときではない。スマホでは一覧を閉じる） */
+  onNavigated?: () => void;
 };
 
 /** ノートの一覧。スマホの引き出しと PC の左の欄で同じものを使う */
@@ -72,11 +94,19 @@ export function NoteTree(props: NoteTreeProps) {
 
 function CurrentTree(props: NoteTreeProps) {
   const pathname = usePathname();
+  const { onNavigated } = props;
+  // 前の URL と比べ、変わったときだけ合図する（初めの表示では呼ばない）
+  const previous = useRef(pathname);
+  useEffect(() => {
+    if (previous.current === pathname) return;
+    previous.current = pathname;
+    onNavigated?.();
+  }, [pathname, onNavigated]);
   // ページを移ったら、開いておくフォルダを今のノートに合わせて決め直す
   return <TreeList key={pathname} {...props} current={findCurrent(props.tree, pathname)} />;
 }
 
-function TreeList({ tree, onNavigate, current }: NoteTreeProps & { current: Current }) {
+function TreeList({ tree, current }: NoteTreeProps & { current: Current }) {
   const currentPaths = new Set(current && !current.home ? current.trail.map((e) => e.path) : []);
   // ホームでは、開く理由のあるフォルダがないので、すべて閉じておく
   const [open, setOpen] = useState(() => currentPaths);
@@ -94,7 +124,6 @@ function TreeList({ tree, onNavigate, current }: NoteTreeProps & { current: Curr
         <li>
           <Link
             href="/"
-            onClick={onNavigate}
             aria-current={current?.home ? "page" : undefined}
             className={`
               ${rowClass}
@@ -103,6 +132,7 @@ function TreeList({ tree, onNavigate, current }: NoteTreeProps & { current: Curr
           >
             <HomeIcon className="my-0.5 size-4 shrink-0 text-muted" />
             ホーム
+            <PendingDot />
           </Link>
         </li>
       ) : null}
@@ -114,7 +144,6 @@ function TreeList({ tree, onNavigate, current }: NoteTreeProps & { current: Curr
         open={open}
         toggle={toggle}
         currentPaths={currentPaths}
-        onNavigate={onNavigate}
       />
     </ul>
   );
@@ -125,7 +154,6 @@ type EntriesProps = {
   open: Set<string>;
   toggle: (path: string) => void;
   currentPaths: Set<string>;
-  onNavigate?: () => void;
 };
 
 function Entries({ entries, ...rest }: EntriesProps) {
@@ -136,7 +164,6 @@ function Entries({ entries, ...rest }: EntriesProps) {
       <li key={entry.path}>
         <Link
           href={noteHref(entry.path)}
-          onClick={rest.onNavigate}
           aria-current={rest.currentPaths.has(entry.path) ? "page" : undefined}
           className={`
             ${rowClass}
@@ -144,6 +171,7 @@ function Entries({ entries, ...rest }: EntriesProps) {
           `}
         >
           {entry.name}
+          <PendingDot />
         </Link>
       </li>
     ),
