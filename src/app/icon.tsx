@@ -14,5 +14,8 @@ export function generateImageMetadata() {
 
 export default async function Icon({ id }: { id: Promise<string> }) {
   const size = Number(await id);
-  return appIconImage(size, size === FAVICON_SIZE ? 0.875 : undefined);
+  return appIconImage(
+    size,
+    size === FAVICON_SIZE ? { leafRatio: 0.875, transparent: true } : undefined,
+  );
 }

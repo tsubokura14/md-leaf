@@ -3,7 +3,7 @@
  * 前提（崩れたら見直す）：ライトの色は `:root { ... }`、ダークの色は `.dark { ... }` のブロックに、`--c-bg: <値>;` の形で書いてある。
  */
 
-export type AppColors = { lightBg: string; lightAccent: string; darkBg: string };
+export type AppColors = { lightBg: string; lightAccent: string; darkBg: string; darkAccent: string };
 
 function findVar(css: string, selector: ":root" | ".dark", name: string): string {
   const blocks = css.matchAll(/(?:^|\n)\s*(:root|\.dark)\s*\{([^}]*)\}/g);
@@ -20,6 +20,7 @@ export function extractAppColors(css: string): AppColors {
     lightBg: findVar(css, ":root", "--c-bg"),
     lightAccent: findVar(css, ":root", "--c-accent"),
     darkBg: findVar(css, ".dark", "--c-bg"),
+    darkAccent: findVar(css, ".dark", "--c-accent"),
   };
 }
 
