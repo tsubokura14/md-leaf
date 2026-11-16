@@ -48,3 +48,4 @@ AGENTS.md と CLAUDE.md はテンプレートのものなので、このプロ�
 - 画面を動かすテストで、ページを開いてすぐボタン（フォルダ、☰ など）を押すときは、`e2e/hydration.ts` の `clickWhenHydrated` で React がつながるのを待ってから押す。つながる前に押すと何も起きず、CI でたまに落ちる（理由は `e2e/hydration.ts`）
 - `/dev-build` の始めに `docker info` で Docker が動いているか確かめ、動いていなければ先に人に起動を頼む
 - PR・Issue・コミットの題や本文を Git Bash から `gh`・`git` に渡すとき、`/` で始まる文字（`/content-review` など）は Git Bash が Windows のパスに書き換える（`C:/Program Files/Git/…`）。`MSYS_NO_PATHCONV=1` を付けて呼ぶか、題の頭を `/` 以外にする
+- 一覧の行などに印・飾り（読み込み中の点など）を足すときは、`absolute` などで行の幅を取らない置き方にする。幅を取ると、長い名前の折り返しが変わり、行の文字の位置がずれる。確かめは、長い名前の行がある画面の画像のテスト（`note-tree-many` など）を基準の画像のまま通すことで行う
