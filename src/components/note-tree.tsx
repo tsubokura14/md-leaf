@@ -2,7 +2,7 @@
 
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { ChevronIcon, HomeIcon } from "@/components/icons";
 import { NOTE_PREFIX, noteHref } from "@/lib/note-url";
 import type { NoteTree as NoteTreeData, NoteTreeEntry, NoteTreeFolder } from "@/lib/notes";
@@ -79,8 +79,8 @@ function PendingDot() {
 
 type NoteTreeProps = {
   tree: NoteTreeData;
-  /** ノート・「ホーム」を押したとき（スマホでは一覧を閉じる） */
-  onNavigate?: () => void;
+  /** ページが切り替わったとき（押したときではない。スマホでは一覧を閉じる） */
+  onNavigated?: () => void;
 };
 
 /** ノートの一覧。スマホの引き出しと PC の左の欄で同じものを使う */
@@ -94,11 +94,19 @@ export function NoteTree(props: NoteTreeProps) {
 
 function CurrentTree(props: NoteTreeProps) {
   const pathname = usePathname();
+  const { onNavigated } = props;
+  // 前の URL と比べ、変わったときだけ合図する（初めの表示では呼ばない）
+  const previous = useRef(pathname);
+  useEffect(() => {
+    if (previous.current === pathname) return;
+    previous.current = pathname;
+    onNavigated?.();
+  }, [pathname, onNavigated]);
   // ページを移ったら、開いておくフォルダを今のノートに合わせて決め直す
   return <TreeList key={pathname} {...props} current={findCurrent(props.tree, pathname)} />;
 }
 
-function TreeList({ tree, onNavigate, current }: NoteTreeProps & { current: Current }) {
+function TreeList({ tree, current }: NoteTreeProps & { current: Current }) {
   const currentPaths = new Set(current && !current.home ? current.trail.map((e) => e.path) : []);
   // ホームでは、開く理由のあるフォルダがないので、すべて閉じておく
   const [open, setOpen] = useState(() => currentPaths);
@@ -116,7 +124,6 @@ function TreeList({ tree, onNavigate, current }: NoteTreeProps & { current: Curr
         <li>
           <Link
             href="/"
-            onClick={onNavigate}
             aria-current={current?.home ? "page" : undefined}
             className={`
               ${rowClass}
@@ -137,7 +144,6 @@ function TreeList({ tree, onNavigate, current }: NoteTreeProps & { current: Curr
         open={open}
         toggle={toggle}
         currentPaths={currentPaths}
-        onNavigate={onNavigate}
       />
     </ul>
   );
@@ -148,7 +154,6 @@ type EntriesProps = {
   open: Set<string>;
   toggle: (path: string) => void;
   currentPaths: Set<string>;
-  onNavigate?: () => void;
 };
 
 function Entries({ entries, ...rest }: EntriesProps) {
@@ -159,7 +164,6 @@ function Entries({ entries, ...rest }: EntriesProps) {
       <li key={entry.path}>
         <Link
           href={noteHref(entry.path)}
-          onClick={rest.onNavigate}
           aria-current={rest.currentPaths.has(entry.path) ? "page" : undefined}
           className={`
             ${rowClass}
