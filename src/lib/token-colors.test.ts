@@ -21,11 +21,12 @@ const tokens = `
 `;
 
 describe("extractAppColors", () => {
-  test("ライトの bg・accent と、ダークの bg を取り出す", () => {
+  test("ライトの bg・accent と、ダークの bg・accent を取り出す", () => {
     expect(extractAppColors(tokens)).toEqual({
       lightBg: "#fbf8f1",
       lightAccent: "#4f7a3a",
       darkBg: "#1d1c19",
+      darkAccent: "#9cc27f",
     });
   });
 
