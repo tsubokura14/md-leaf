@@ -389,7 +389,7 @@ test.describe("ノートの一覧（スマホ）", () => {
     await expect(drawer(page)).toBeHidden();
   });
 
-  test("ノートを押すと、そこへ移って一覧を閉じる", async ({ page }) => {
+  test("ノートを押すと、そこへ移って一覧を閉じ、フォーカスを ☰ に戻す", async ({ page }) => {
     await page.goto("/");
     await openDrawer(page);
     await drawer(page).getByRole("button", { name: "実践" }).click();
@@ -398,6 +398,7 @@ test.describe("ノートの一覧（スマホ）", () => {
     await expect(page.getByRole("heading", { level: 1, name: "リリースの手順" })).toBeVisible();
     await expect(place(page)).toHaveText("実践 / 開発 / リリースの手順");
     await expect(drawer(page)).toBeHidden();
+    await expect(page.getByRole("button", { name: "ノートの一覧を開く" })).toBeFocused();
   });
 
   test("「ホーム」を押すと、ホームへ移って一覧を閉じる", async ({ page }) => {
