@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { createContext, useContext } from "react";
 import { describe, expect, test, vi } from "vitest";
 import type { NoteTree as NoteTreeData } from "@/lib/notes";
@@ -6,7 +6,7 @@ import { NoteTree } from "./note-tree";
 
 // useLinkStatus は Next.js のルーターの中でしか動かないので、Link ごと差し替える。
 // pendingHref に当たるリンクだけを「待っている」ことにする
-const hoisted = vi.hoisted(() => ({ pendingHref: null as string | null }));
+const hoisted = vi.hoisted(() => ({ pendingHref: null as string | null, pathname: "/" }));
 const HrefContext = createContext<string | null>(null);
 
 vi.mock("next/link", () => ({
@@ -19,7 +19,7 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/",
+  usePathname: () => hoisted.pathname,
 }));
 
 const tree: NoteTreeData = {
@@ -45,5 +45,27 @@ describe("NoteTree の読み込み中の印", () => {
     expect(screen.queryByRole("status")).toBeNull();
     // ホーム・ノート2つの3行とも、印の枠を置いたまま（幅を取らないよう absolute で置く。見た目は画像のテスト）
     expect(container.querySelectorAll("a [data-pending-dot]")).toHaveLength(3);
+  });
+});
+
+describe("NoteTree の、ページが切り替わったときの合図", () => {
+  test("押しただけでは onNavigated を呼ばない", () => {
+    hoisted.pendingHref = null;
+    hoisted.pathname = "/";
+    const onNavigated = vi.fn();
+    render(<NoteTree tree={tree} onNavigated={onNavigated} />);
+    fireEvent.click(screen.getByRole("link", { name: "02_b" }));
+    expect(onNavigated).not.toHaveBeenCalled();
+  });
+
+  test("URL が変わると onNavigated を1回呼ぶ（初めの表示では呼ばない）", () => {
+    hoisted.pendingHref = null;
+    hoisted.pathname = "/";
+    const onNavigated = vi.fn();
+    const { rerender } = render(<NoteTree tree={tree} onNavigated={onNavigated} />);
+    expect(onNavigated).not.toHaveBeenCalled();
+    hoisted.pathname = "/notes/02_b";
+    rerender(<NoteTree tree={tree} onNavigated={onNavigated} />);
+    expect(onNavigated).toHaveBeenCalledTimes(1);
   });
 });
