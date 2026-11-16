@@ -43,7 +43,7 @@ describe("NoteTree の読み込み中の印", () => {
     hoisted.pendingHref = null;
     const { container } = render(<NoteTree tree={tree} />);
     expect(screen.queryByRole("status")).toBeNull();
-    // ホーム・ノート2つの3行とも、印の枠を置いたまま（幅を取らないよう absolute で置く。見た目は画像のテスト）
+    // ホーム・ノート2つの3行とも、印の枠を置いたまま（幅を取らないよう absolute で置く。見た目は触って確かめる）
     expect(container.querySelectorAll("a [data-pending-dot]")).toHaveLength(3);
   });
 });
