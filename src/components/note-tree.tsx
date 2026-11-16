@@ -49,7 +49,7 @@ export function usePlace(tree: NoteTreeData): string[] {
 }
 
 const rowClass = `
-  flex w-full items-start gap-2 rounded-md px-2 py-2 text-left leading-normal
+  relative flex w-full items-start gap-2 rounded-md px-2 py-2 text-left leading-normal
   transition-colors
   hover:bg-surface
 `;
@@ -58,7 +58,8 @@ const currentClass = "bg-accent/10 font-bold text-accent hover:bg-accent/10";
 /**
  * 押したリンクの移動を待つ間だけ、行の右端に出す点（docs/ui.md の「状態の見せ方」）。
  * useLinkStatus は <Link> の子でしか使えないので、行の中に置く部品にする。
- * 行の高さと名前の折り返しの幅を変えないよう、枠はいつも置き、点の見え方だけを切り替える
+ * 行の高さと名前の折り返しの幅を変えないよう、行（relative）の右の余白（px-2）の中、1行目の高さに absolute で置く。
+ * 枠はいつも置き、点の見え方だけを切り替える
  */
 function PendingDot() {
   const { pending } = useLinkStatus();
@@ -69,7 +70,7 @@ function PendingDot() {
       aria-label={pending ? "読み込み中" : undefined}
       aria-hidden={pending ? undefined : true}
       className={`
-        my-1.5 ml-auto size-1.5 shrink-0 rounded-full bg-accent
+        absolute top-3.5 right-0.5 size-1.5 rounded-full bg-accent
         ${pending ? "motion-safe:animate-pulse" : "opacity-0"}
       `}
     />

@@ -79,8 +79,8 @@
 
 ### 変えるファイル
 
-- `src/components/note-tree.tsx`：一覧のノート・「ホーム」の `<Link>` の中に、印の部品 `PendingDot` を置く。`PendingDot` は `useLinkStatus` の `pending` が true のときだけ、行の右端（`ml-auto`）に accent の小さな丸い点を出す
-  - 行の高さと文字の位置を動かさないため、点は文字の1行目の高さに収まる大きさ（`size-1.5` 程度）にし、`shrink-0` で名前の折り返しの幅を変えないよう、印の枠は待っていないときも置いたままにし、点の見え方（`opacity`）だけを切り替える
+- `src/components/note-tree.tsx`：一覧のノート・「ホーム」の `<Link>` の中に、印の部品 `PendingDot` を置く。`PendingDot` は `useLinkStatus` の `pending` が true のときだけ、行の右端に accent の小さな丸い点を出す
+  - 行の高さと文字の位置を動かさないため、行の `<Link>` を `relative` にし、点（`size-1.5`）を `absolute` で行の右の余白（`px-2` の中）の1行目の高さに置く。名前の折り返しの幅を取らない。印の枠は待っていないときも置いたままにし、点の見え方（`opacity`）だけを切り替える
   - 点滅は今のスケルトンと同じ `animate-pulse` を `motion-safe:` で付ける（動きを減らす設定では点を出したまま）
   - 読み上げ：待つ間だけ `role="status"`＋`aria-label="読み込み中"`（スケルトンの枠と同じ伝え方）。待っていないときは `aria-hidden`
   - `onClick={onNavigate}` を外し、`onNavigate` は「ページが切り替わったとき」に呼ぶ意味に変える（名前は `onNavigated`）。`CurrentTree` は URL ごとに作り直しているので、`usePathname` が前の値から変わったときに `useEffect` で呼ぶ（初めの表示では呼ばない）
