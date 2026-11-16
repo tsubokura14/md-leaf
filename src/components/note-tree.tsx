@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useState } from "react";
 import { ChevronIcon, HomeIcon } from "@/components/icons";
@@ -55,6 +55,27 @@ const rowClass = `
 `;
 const currentClass = "bg-accent/10 font-bold text-accent hover:bg-accent/10";
 
+/**
+ * 押したリンクの移動を待つ間だけ、行の右端に出す点（docs/ui.md の「状態の見せ方」）。
+ * useLinkStatus は <Link> の子でしか使えないので、行の中に置く部品にする。
+ * 行の高さと名前の折り返しの幅を変えないよう、枠はいつも置き、点の見え方だけを切り替える
+ */
+function PendingDot() {
+  const { pending } = useLinkStatus();
+  return (
+    <span
+      data-pending-dot=""
+      role={pending ? "status" : undefined}
+      aria-label={pending ? "読み込み中" : undefined}
+      aria-hidden={pending ? undefined : true}
+      className={`
+        my-1.5 ml-auto size-1.5 shrink-0 rounded-full bg-accent
+        ${pending ? "motion-safe:animate-pulse" : "opacity-0"}
+      `}
+    />
+  );
+}
+
 type NoteTreeProps = {
   tree: NoteTreeData;
   /** ノート・「ホーム」を押したとき（スマホでは一覧を閉じる） */
@@ -103,6 +124,7 @@ function TreeList({ tree, onNavigate, current }: NoteTreeProps & { current: Curr
           >
             <HomeIcon className="my-0.5 size-4 shrink-0 text-muted" />
             ホーム
+            <PendingDot />
           </Link>
         </li>
       ) : null}
@@ -144,6 +166,7 @@ function Entries({ entries, ...rest }: EntriesProps) {
           `}
         >
           {entry.name}
+          <PendingDot />
         </Link>
       </li>
     ),
