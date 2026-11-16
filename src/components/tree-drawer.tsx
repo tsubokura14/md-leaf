@@ -99,8 +99,9 @@ export function TreeDrawer({ tree, footer }: TreeDrawerProps) {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {/* 押したときではなく、ページが切り替わってから閉じる。押してすぐ閉じると、待つ間の行の印（PendingDot）が見えないため */}
-            <NoteTree tree={tree} onNavigated={() => setOpen(false)} />
+            {/* 押したときではなく、ページが切り替わってから閉じる。押してすぐ閉じると、待つ間の行の印（PendingDot）が見えないため。
+                閉じた一覧のまま本文のリンクなどで移ったときは、フォーカスを ☰ へ動かさない */}
+            <NoteTree tree={tree} onNavigated={() => open && close()} />
           </div>
           {footer}
         </div>
