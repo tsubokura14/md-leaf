@@ -3,7 +3,7 @@
 import { Fragment, Suspense, type ReactNode } from "react";
 import { FontSizeMenu } from "@/components/font-size-menu";
 import { usePlace } from "@/components/note-tree";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeMenu } from "@/components/theme-menu";
 import { TocButton } from "@/components/toc";
 import { TreeDrawer } from "@/components/tree-drawer";
 import type { NoteTree } from "@/lib/notes";
@@ -53,7 +53,7 @@ export function TopBar({ tree, treeFooter }: TopBarProps) {
       </Suspense>
       <TocButton />
       <FontSizeMenu />
-      <ThemeToggle />
+      <ThemeMenu />
     </header>
   );
 }
