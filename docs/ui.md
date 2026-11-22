@@ -32,7 +32,7 @@
 | border | 区切り線、見出しの下線、枠 |
 | accent | リンク、今開いているノート（一覧での強調）、主なボタン、アプリの印（若葉のアイコン）。1画面の主なボタンは1つだけ |
 | on-accent | accent の上の文字 |
-| note・tip・warning・danger・abstract・important・caution | コールアウトの種類ごとの色（7色）。左の太線と見出しの文字に使い、地はその色を薄くしたもの。danger はエラーの帯にも使う |
+| info・success・warning・danger・abstract・important・caution | コールアウトの種類ごとの色（7色）。info は note の、success は tip の色。左の太線と見出しの文字に使い、地はその色を薄くしたもの。danger はエラーの帯にも使う。info・success・warning・danger はシリーズで共通の意味の名前（kinari-md） |
 | code-keyword・code-string・code-comment | コードのハイライト |
 | overlay | 一覧・目次を開いたときの、うしろを暗くする幕 |
 
@@ -63,7 +63,7 @@
 
 - コールアウト：左に太線、薄い地、見出しにアイコンと題（題がなければ種類ごとの日本語の題）。折りたたみ（`> [!note]-`）は、見出しの右に矢印を出し、最初は閉じておく（閉じているときは右向き、開くと下向き）
   - 見出しはゴシックの小さめの太字で、種類の色。中身は本文と同じ明朝
-  - 保管庫の決まりの11種類は、それぞれ別のアイコンにし、色は abstract・note・tip・important・warning・caution・danger の7色に分ける。別名は本来の種類と同じ見た目、決まりにない種類は note の見た目（対応は `docs/specs/notes.md` の「本文のブロック」）
+  - 保管庫の決まりの11種類は、それぞれ別のアイコンにし、色は abstract・info・success・important・warning・caution・danger の7色に分ける。別名は本来の種類と同じ見た目、決まりにない種類は note の見た目（対応は `docs/specs/notes.md` の「本文のブロック」）
   - 理由：意味を分けて使う組（abstract と info、tip と important、warning と caution）は、色も違えば一目で分かる。11色すべてを別にすると似た色が増え、ライト・ダークの両方で見分けを保つのが難しい
   - 薄い地は、種類の色を bg に混ぜて作る（トークンを増やさない）
 - コード（ブロック）：surface の地に等幅の文字。色分けは code-keyword・code-string・code-comment の3色だけで、ほかは text の色。長い行は折り返さず、枠の中で横にスクロールする

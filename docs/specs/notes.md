@@ -103,13 +103,13 @@
     | 種類（別名） | 色 | アイコン |
     | --- | --- | --- |
     | abstract（summary・tldr） | abstract | 横線を並べた紙 |
-    | info | note | 丸に「i」 |
-    | note、決まりにない種類（todo・quote・cite・failure・fail・missing・bug、知らない種類） | note | 鉛筆 |
+    | info | info | 丸に「i」 |
+    | note、決まりにない種類（todo・quote・cite・failure・fail・missing・bug、知らない種類） | info | 鉛筆 |
     | example | abstract | リスト |
-    | tip（hint） | tip | 電球 |
+    | tip（hint） | success | 電球 |
     | important | important | 星 |
     | question（help・faq） | warning | 丸に「?」 |
-    | success（check・done） | tip | チェック |
+    | success（check・done） | success | チェック |
     | warning（attention） | warning | 三角に「!」 |
     | caution | caution | 八角形に「!」 |
     | danger（error） | danger | 稲妻 |
