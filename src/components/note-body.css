@@ -206,9 +206,10 @@
   margin: 0 auto;
 }
 
-/* コールアウト。色は data-callout（abstract・note・tip・important・warning・caution・danger）で決め、地はその色を bg に薄く混ぜる */
+/* コールアウト。色は data-callout（abstract・note・tip・important・warning・caution・danger）で決め、地はその色を bg に薄く混ぜる。
+   note と tip は、シリーズで共通の意味の色（info・success）に当てる */
 .note-body .callout {
-  --callout-color: var(--color-note);
+  --callout-color: var(--color-info);
   padding: calc(var(--spacing) * 3);
   border-left: calc(var(--spacing) * 1) solid var(--callout-color);
   border-radius: var(--radius-md);
@@ -216,7 +217,7 @@
 }
 
 .note-body .callout[data-callout="tip"] {
-  --callout-color: var(--color-tip);
+  --callout-color: var(--color-success);
 }
 
 .note-body .callout[data-callout="warning"] {
