@@ -11,7 +11,6 @@ import { usePopover } from "@/components/use-popover";
 //   サーバーで作る HTML はどれを選んでいるかを知らないため、React の状態で出し分けると、つながる前に違うアイコンが出る。
 //   CSS なら、<head> のスクリプトが印を付けた時点で正しいものが出る。隠したもの（display: none）は読み上げにも出ない
 // - 枠は「Aa」の枠（src/components/font-size-menu.tsx）と同じ見た目と閉じ方。選んでも閉じない（選び比べられるように）
-// - 3つは縦に並べる。「端末に合わせる」は長く、横に並べると折り返すため
 // 前提（崩れたら見直す）：選んでいるものは <html> の data-theme-choice だけで決まる（src/components/theme.ts）
 
 type IconComponent = ComponentType<{ className?: string }>;

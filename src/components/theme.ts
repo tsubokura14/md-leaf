@@ -5,8 +5,7 @@
 //   （memory-forge・kinari-md と同じ。kinari-md の CSS は "light"・"dark" の前提で読むので、"system" は入れない）
 // - CHOICE_ATTR（data-theme-choice）：選んでいるもの（"system"・"light"・"dark"）。開いているあいだの「選んでいるもの」の正本。
 //   端末の設定が変わったときに合わせ直すのは、これが "system" のときだけ（保存できないブラウザで選んだあとも、
-//   端末の設定の変化で上書きしないため）。サーバーで作る HTML はどれを選んでいるかを知らないので、
-//   上の帯のボタンのアイコンの出し分けも、この印を CSS で見て行う
+//   端末の設定の変化で上書きしないため）。上の帯のボタンのアイコンの出し分けにも使う（src/components/theme-menu.tsx）
 //
 // - 選んだものは、ブラウザの localStorage に THEME_KEY で "system"・"light"・"dark" のどれかを保存する
 //   （前の版の "light"・"dark" はそのまま読める。ない・ほかの値・読めないときは "system"）。
