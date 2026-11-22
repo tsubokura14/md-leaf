@@ -13,7 +13,7 @@ const tokens = `
   --c-accent: #4f7a3a;
   --c-overlay: rgb(30 28 24 / 0.4);
 }
-.dark {
+[data-theme="dark"] {
   color-scheme: dark;
   --c-bg: #1d1c19;
   --c-accent: #9cc27f;
