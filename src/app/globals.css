@@ -1,8 +1,8 @@
 @import "tailwindcss";
 @import "../styles/tokens.css";
 
-/* dark: の変形を、<html> の .dark のクラスに合わせる（src/components/theme.ts） */
-@custom-variant dark (&:where(.dark, .dark *));
+/* dark: の変形を、<html> の data-theme="dark" に合わせる（src/components/theme.ts） */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /* reading: の変形。本文（.reading）を出しているページでだけ当てる（src/components/font-size-menu.tsx）。
    画面を移るあいだ、Next.js（React の Activity）は前のページを style の display: none で隠して残すので、

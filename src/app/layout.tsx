@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    // <head> のスクリプトが、ライト/ダークは <html> の class（と theme-color の <meta>）を、本文の文字の大きさは style を変える
+    // <head> のスクリプトが、ライト/ダークは <html> の data-theme・data-theme-choice（と theme-color の <meta>）を、本文の文字の大きさは style を変える
     // （src/components/theme.ts・src/components/reading-size.ts）
     <html lang="ja" suppressHydrationWarning>
       <head>
