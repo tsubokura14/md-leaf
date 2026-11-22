@@ -186,4 +186,4 @@
 ## タスク
 
 - [x] `<html>` の印を `data-theme`・`data-theme-choice` に替え、3択の保存・読み出し・端末の設定への追従ができたら完了（`theme.ts`・`tokens.css`・`token-colors.ts`・`globals.css` の `dark` の変形・Mermaid の描き直し・theme-color。今のボタンは `setTheme` でライトとダークを入れ替えるだけにして残す。今の e2e を新しい印に合わせ、端末に合わせる・前の版の値・保存できないときのテストを足す。見た目は変わらないので画像は撮り直さない）
-- [ ] 上の帯のボタンを、3つから選ぶテーマの枠に替えたら完了（`theme-menu.tsx`・`use-popover.ts`・`icons.tsx`・`top-bar.tsx`・`globals.css` の選んでいるものの変形。画像：上の帯のある画面すべてを撮り直し、`note-theme-light.png`・`note-theme-menu.png`・`note-theme-menu-dark.png` を足す）
+- [x] 上の帯のボタンを、3つから選ぶテーマの枠に替えたら完了（`theme-menu.tsx`・`use-popover.ts`・`icons.tsx`・`top-bar.tsx`・`globals.css` の選んでいるものの変形。画像：上の帯のある画面すべてを撮り直し、`note-theme-light.png`・`note-theme-menu.png`・`note-theme-menu-dark.png` を足す）
