@@ -160,6 +160,7 @@
 - 「端末に合わせる」で、そのとき出している色の印も `data-theme` に付ける（"light" か "dark"）。理由：CSS と Mermaid の描き直し・時刻や電池の部分の色が、印1つだけを見れば済む（memory-forge と同じ）
 - 選んでいるものは、もう1つの印 `data-theme-choice` に付ける。理由：ボタンのアイコンを、つながる前から CSS で正しく出すため（今の作りと同じ）。比べた案：React の状態で出し分ける（サーバーの HTML はどれを選んでいるか知らないので、つながる前に違うアイコンが出る）、`data-theme` に "system" も入れる（kinari-md の CSS が `data-theme` を "light"・"dark" の前提で読むので使えない）
 - 外を押す・Esc で閉じる処理は、「Aa」の枠と共通の小さなフック（`src/components/use-popover.ts`）にする。理由：同じ閉じ方を2か所に書き写さない。比べた案：テーマの枠に書き写す（ずれたときに片方だけ直る）、枠の部品ごと共通にする（中身の並べ方が違い、引数が増える）
+- ボタンの中の3つのアイコンは、それぞれ `data-theme-icon`（"system"・"light"・"dark"）を付けた要素で包み、画面のテストはこれで見えているアイコンを確かめる。枠の幅は w-56、行の高さは h-11。理由：アイコンは読み上げに出さない（aria-hidden）ので、名前では探せない。幅は「端末に合わせる」がアイコンと1行に収まる幅、行の高さは押しやすい 44px
 - 新しい画像の名前は `note-theme-light.png`・`note-theme-menu.png`・`note-theme-menu-dark.png`。「端末に合わせる（ライト）」と「ダークを選んでいる」は、今の `note-default.png`・`note-default-dark.png` を撮り直して使う。理由：同じ状態を2枚持たない
 
 ## 確かめ方
