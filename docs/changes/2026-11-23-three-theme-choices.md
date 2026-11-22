@@ -102,7 +102,52 @@
 
 ## 設計
 
-<!-- /dev-build で書く -->
+### データ（ブラウザに覚えるもの）
+
+- localStorage のキーは今の `md-leaf-theme` のまま。値は `"system"`・`"light"`・`"dark"` のどれか。ない・ほかの値・読めないときは `"system"` として扱う（前の版の `"light"`・`"dark"` はそのまま読める）
+- 「端末に合わせる」を選んだときも、キーを消さずに `"system"` を書く（確認表のとおり）
+
+### `<html>` に付ける印（2つ）
+
+| 印 | 値 | 使う側 |
+| --- | --- | --- |
+| `data-theme` | 今出している色（`"light"`・`"dark"`）。「端末に合わせる」では端末の設定から決めた色 | トークンのダークの組（`[data-theme="dark"]`）、`dark:` の変形、Mermaid の描き直し、時刻や電池の部分の色 |
+| `data-theme-choice` | 選んでいるもの（`"system"`・`"light"`・`"dark"`） | 上の帯のボタンのアイコンの出し分け（CSS の変形）、端末の設定が変わったときに合わせ直すかどうか、枠を開いたときの選ばれている行 |
+
+- 今の `.dark` のクラスと `data-theme-chosen` の印はなくす。`data-theme-choice` が、そのページを開いているあいだの「選んでいるもの」の正本になる（保存できないブラウザで選んだあとも、端末の設定の変化で上書きしない。今の `data-theme-chosen` の役目を引き継ぐ）
+- 理由：色を決める側（CSS・Mermaid・theme-color）は `data-theme` 1つだけを見れば済む（memory-forge・kinari-md と同じ）。アイコンの出し分けは、サーバーで作る HTML がどれを選んでいるかを知らないので、今と同じく CSS で行い、そのために選んでいるものも印にする
+
+### 変えるファイル
+
+- `src/components/theme.ts`
+  - `applyInitialTheme(key, choiceAttr, barColors)`：保存を読み（なければ `"system"`）、`data-theme-choice` と `data-theme` を付ける。`prefers-color-scheme` の変化で、`data-theme-choice` が `"system"` のときだけ `data-theme` を付け直す。theme-color の `<meta>` は `data-theme` を見張る（MutationObserver の `attributeFilter: ["data-theme"]`）。`<head>` に埋めて最初に描く前に動かす作りは今のまま
+  - `setTheme(choice)`：`data-theme-choice` と `data-theme`（`"system"` なら今の端末の設定から）を付け、保存する。保存に失敗しても何もしない
+  - `currentTheme()`：`data-theme-choice` を読む（枠を開くときに使う）
+  - `toggleTheme` はなくす（タスク2でボタンを替えるまでは、今のボタンが `setTheme` で入れ替える）
+  - 理由と前提はファイルの頭のコメントを書き直して残す
+- `src/styles/tokens.css`：ダークの組を `.dark` から `[data-theme="dark"]` に
+- `src/lib/token-colors.ts`（とテスト）：ダークの組を `[data-theme="dark"]` のブロックから読む
+- `src/app/globals.css`：`dark` の変形を `[data-theme="dark"]` に合わせる。選んでいるものの変形 `theme-system`・`theme-light`・`theme-dark` を足す（`<html>` の `data-theme-choice` に合わせる）
+- `src/components/note-body-content.tsx`：Mermaid の描き直しは `data-theme` を見張る
+- `src/components/theme-menu.tsx`（新しく。`theme-toggle.tsx` を置き換える）：上の帯のテーマのボタンと枠
+  - ボタン（`aria-label="テーマ"`、`aria-expanded`）の中に3つのアイコンを描き、`theme-system:`・`theme-light:`・`theme-dark:` の変形で1つだけ出す（理由は今の `theme-toggle.tsx` と同じ。コメントで残す）
+  - 枠は `font-size-menu.tsx` と同じ見た目と閉じ方（外を押す・Esc でボタンにフォーカスを戻す・もう一度ボタン）。見出し「テーマ」と `role="radiogroup"`、3つの `role="radio"` を縦に並べる。選んでも閉じない
+  - 外を押す・Esc の処理は2つの枠で同じなので、`src/components/use-popover.ts` に小さなフックとして出し、`font-size-menu.tsx` もそれを使う
+- `src/components/icons.tsx`：「半分を塗った丸」（`SystemThemeIcon`）を足す。月・太陽は今のもの
+- `src/components/top-bar.tsx`：`ThemeToggle` を `ThemeMenu` に
+- `e2e/`：テーマのテストを3択に書き直す。上の帯のある画面の画像を撮り直し、テーマの画面を足す
+- 仕上げで直す文書：`docs/specs/display.md`・`notes.md`・`login.md`・`home-screen.md`、`docs/ui.md`（上の帯のテーマの枠）、`docs/design.md`（`globals.css` の行）
+
+### 撮る画像（「画面」の表）
+
+| 状態 | 画像 |
+| --- | --- |
+| 端末に合わせる（ライト） | `note-default.png`（何も選ばず、端末の設定はライト。撮り直す） |
+| ライトを選んでいる | `note-theme-light.png`（新しく。画面の高さの分だけ） |
+| ダークを選んでいる | `note-default-dark.png`（撮り直す） |
+| 枠を開いた（ライト） | `note-theme-menu.png`（新しく。何も選ばず、端末の設定はライトなので「端末に合わせる」が選ばれている） |
+| 枠を開いた（ダーク） | `note-theme-menu-dark.png`（新しく。ダークを選んでいる） |
+
 
 ## AIが決めたこと
 
@@ -113,11 +158,31 @@
 - 枠の中は3つを縦に並べ、選ばれている行は surface の地に accent の太字にする（「画面」）。理由：「端末に合わせる」が長く、横に並べると折り返す。選ばれた見た目は「Aa」の枠（accent の太字）に合わせる
 - プロトタイプを作らないので、画像を撮る画面と状態は「画面」の表のとおりにする（/dev-build で撮る）
 - 「端末に合わせる」で、そのとき出している色の印も `data-theme` に付ける（"light" か "dark"）。理由：CSS と Mermaid の描き直し・時刻や電池の部分の色が、印1つだけを見れば済む（memory-forge と同じ）
+- 選んでいるものは、もう1つの印 `data-theme-choice` に付ける。理由：ボタンのアイコンを、つながる前から CSS で正しく出すため（今の作りと同じ）。比べた案：React の状態で出し分ける（サーバーの HTML はどれを選んでいるか知らないので、つながる前に違うアイコンが出る）、`data-theme` に "system" も入れる（kinari-md の CSS が `data-theme` を "light"・"dark" の前提で読むので使えない）
+- 外を押す・Esc で閉じる処理は、「Aa」の枠と共通の小さなフック（`src/components/use-popover.ts`）にする。理由：同じ閉じ方を2か所に書き写さない。比べた案：テーマの枠に書き写す（ずれたときに片方だけ直る）、枠の部品ごと共通にする（中身の並べ方が違い、引数が増える）
+- 新しい画像の名前は `note-theme-light.png`・`note-theme-menu.png`・`note-theme-menu-dark.png`。「端末に合わせる（ライト）」と「ダークを選んでいる」は、今の `note-default.png`・`note-default-dark.png` を撮り直して使う。理由：同じ状態を2枚持たない
 
 ## 確かめ方
 
-<!-- /dev-build で書く -->
+| 受け入れ条件 | 確かめ方 |
+| --- | --- |
+| 上の帯の右端（「Aa」の右）にテーマのボタンが出る | 触って確かめる（画像：上の帯のある画面すべて） |
+| ボタンのアイコンが選んでいるものを表す | テスト（`e2e/theme.spec.ts`：3つの状態で見えるアイコン）＋画像 |
+| 押すと枠が開き、見出しと3つ、選んでいるものが選ばれた見た目 | テスト（`e2e/theme.spec.ts`：見出し・3つの名前・選ばれているもの）＋画像（`note-theme-menu*.png`） |
+| 選ぶと読み込み直さずにその色になりアイコンも変わる。枠は開いたまま。外・Esc・ボタンで閉じ、Esc はボタンにフォーカスを戻す | テスト（`e2e/theme.spec.ts`） |
+| 「端末に合わせる」では端末の設定に合わせ、変わったら合わせ直す | テスト（`e2e/theme.spec.ts`：保存「ダーク」から「端末に合わせる」を選んだあと、端末の設定を変える） |
+| 「ライト」「ダーク」では端末の設定が変わっても選んだもの | テスト（`e2e/theme.spec.ts`） |
+| 一度も選んでいなければ「端末に合わせる」 | テスト（`e2e/theme.spec.ts`） |
+| 前の版の「ライト」「ダーク」がそのまま選ばれている | テスト（`e2e/theme.spec.ts`：`"dark"` を保存して開き、枠で「ダーク」が選ばれている） |
+| 選んだものをブラウザに覚え、移っても読み込み直しても残る | テスト（`e2e/theme.spec.ts`） |
+| 開いた瞬間にちらつかない | テスト（`e2e/theme.spec.ts`：`<body>` ができた時点の `data-theme`） |
+| ダークで各部品がダークの色。Mermaid は選んだとき・端末の設定が変わったときに描き直す。画像はそのまま | テスト（`e2e/theme.spec.ts`：Mermaid の線の色を、選んだときと端末の設定が変わったときの両方）＋画像（`*-dark.png`） |
+| 時刻や電池の部分の色が、選んだとき・端末の設定が変わったときの bg | テスト（`e2e/home-screen.spec.ts`） |
+| ログインの画面にボタンがなく、覚えたもの（なければ端末の設定）で出る | テスト（`e2e/theme.spec.ts`） |
+| 覚えておけなくても、その場で切り替わりエラーなし。次は「端末に合わせる」 | テスト（`e2e/theme.spec.ts`：保存で例外を投げるブラウザで選び、端末の設定を変えても上書きされない）。次に開いたとき（保存を読めない）は「端末に合わせる」になることも、同じブラウザで開いた直後の印で確かめる |
+
 
 ## タスク
 
-<!-- /dev-build で書く -->
+- [ ] `<html>` の印を `data-theme`・`data-theme-choice` に替え、3択の保存・読み出し・端末の設定への追従ができたら完了（`theme.ts`・`tokens.css`・`token-colors.ts`・`globals.css` の `dark` の変形・Mermaid の描き直し・theme-color。今のボタンは `setTheme` でライトとダークを入れ替えるだけにして残す。今の e2e を新しい印に合わせ、端末に合わせる・前の版の値・保存できないときのテストを足す。見た目は変わらないので画像は撮り直さない）
+- [ ] 上の帯のボタンを、3つから選ぶテーマの枠に替えたら完了（`theme-menu.tsx`・`use-popover.ts`・`icons.tsx`・`top-bar.tsx`・`globals.css` の選んでいるものの変形。画像：上の帯のある画面すべてを撮り直し、`note-theme-light.png`・`note-theme-menu.png`・`note-theme-menu-dark.png` を足す）
