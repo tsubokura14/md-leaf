@@ -140,6 +140,7 @@
 - Vitest の `server.deps.inline` は足さない。理由：足さずに `npm test` で kinari-md（TS のまま）を読めた（Vitest は `node_modules` の中でも `.ts` のファイルは外に出さずに変換する）
 - `next.config.ts` が `notes.ts` 経由で kinari-md を読むままにし、ファイルは分けない。理由：`next typegen`（`npm run typecheck`）と `next build`（`CONTENT_DIR=e2e/fixtures/content`）で設定を読めた
 - `kinari-md/tokens.css` は `globals.css` で、`kinari-md/body.css` は `note-body.tsx` で読む。理由：トークンは `:root` の変数で、ほかのトークンと同じ場所にそろえる。本文の CSS（KaTeX を含む）は、今の KaTeX の CSS と同じく本文の部品が読む
+- `globals.css` に `@source "../../node_modules/kinari-md/src"` を足す。理由：Tailwind は、探す対象のファイルで使っているトークンの変数だけを出す。`node_modules` は探す対象から外れるので、kinari-md の body.css だけが使う `--color-info`・`--color-success` が出ず、note・tip などのコールアウトの色が消えた（画像を比べるテストで見つけた）。kinari-md の中も探させれば、md-leaf の CSS で kinari-md を上書きせずに済む。比べた案：トークンを `@theme static` にして全部出す（使わない変数も出し、トークンファイルの作りを変えるので選ばない）
 
 ## 確かめ方
 
