@@ -1,6 +1,6 @@
-import "katex/dist/katex.min.css";
+import "kinari-md/body.css";
 import "./note-body.css";
-import type { NoteHeading } from "@/lib/headings";
+import type { Heading } from "@/lib/markdown";
 import { NoteBodyContent } from "./note-body-content";
 import { NoteToc } from "./toc";
 
@@ -8,11 +8,11 @@ type NoteBodyProps = {
   title: string;
   /** src/lib/markdown.ts が作った HTML。ノートの中の HTML のタグは、そこで文字にしてある */
   html: string;
-  /** 目次に出す見出し（src/lib/headings.ts） */
-  headings: NoteHeading[];
+  /** 目次に出す見出し（src/lib/markdown.ts。kinari-md の見出しの一覧） */
+  headings: Heading[];
 };
 
-/** ノートの題と本文と目次。本文の要素の見た目は note-body.css */
+/** ノートの題と本文と目次。本文の要素の見た目は kinari-md の body.css */
 export function NoteBody({ title, html, headings }: NoteBodyProps) {
   return (
     // data-note は、目次が押された見出しを探す範囲（src/components/toc.tsx）

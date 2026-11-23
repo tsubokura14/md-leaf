@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/*": ["./content/**/*"],
   },
+  // kinari-md は TypeScript のまま配られるので、アプリのビルドで変換する
+  transpilePackages: ["kinari-md"],
   cacheComponents: true,
   partialPrefetching: true,
   // next dev が AI のエージェントを見つけると AGENTS.md に Next.js の案内を書き足す。

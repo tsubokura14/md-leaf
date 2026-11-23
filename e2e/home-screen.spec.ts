@@ -116,7 +116,7 @@ test.describe("時刻や電池の部分の色", () => {
     await expect(themeColor(page)).toHaveAttribute("content", colors.darkBg);
     await page.keyboard.press("Escape");
 
-    await waitForHydration(page.locator(".note-body"));
+    await waitForHydration(page.locator(".kinari-body"));
     await page.getByRole("article").getByRole("link", { name: "Docker のメモ" }).click();
     await expect(page.getByRole("heading", { level: 1, name: "Docker のメモ" })).toBeVisible();
     await expect(themeColor(page)).toHaveCount(1);

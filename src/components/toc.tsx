@@ -11,7 +11,7 @@ import {
   type RefObject,
 } from "react";
 import { TocIcon } from "@/components/icons";
-import type { NoteHeading } from "@/lib/headings";
+import type { Heading } from "@/lib/markdown";
 import "./toc.css";
 
 // 上の帯の目次のボタンと、ページが出す目次。上の帯はレイアウトに、見出しはページにあるので、
@@ -88,7 +88,7 @@ function TocContents({
   headings,
   onSelect,
 }: {
-  headings: NoteHeading[];
+  headings: Heading[];
   onSelect: (element: HTMLElement, id: string) => void;
 }) {
   return (
@@ -117,7 +117,7 @@ function TocContents({
 }
 
 /** ページが出す目次。広い PC では本文の右に、それより狭いと目次のボタンで下から出す。見出しがなければ何も出さない */
-export function NoteToc({ headings }: { headings: NoteHeading[] }) {
+export function NoteToc({ headings }: { headings: Heading[] }) {
   const { open, setOpen, button } = useToc();
   const panel = useRef<HTMLDivElement>(null);
 

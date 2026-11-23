@@ -1,5 +1,9 @@
 @import "tailwindcss";
 @import "../styles/tokens.css";
+/* Markdown だけが使う値（コードの色分け・コールアウトの一部の色・表の列の幅）。:root と [data-theme="dark"] の変数 */
+@import "kinari-md/tokens.css";
+/* kinari-md の中も、トークンを使っている場所として Tailwind に探させる（docs/design.md の「トークンにない値を書かない」） */
+@source "../../node_modules/kinari-md/src";
 
 /* dark: の変形を、<html> の data-theme="dark" に合わせる（src/components/theme.ts） */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));

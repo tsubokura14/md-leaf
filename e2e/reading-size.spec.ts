@@ -53,14 +53,14 @@ test.describe("開いたときの本文の文字の大きさ", () => {
     page,
   }) => {
     await page.goto(GIT_NOTE);
-    await expect(page.locator(".note-body p").first()).toBeVisible();
+    await expect(page.locator(".kinari-body p").first()).toBeVisible();
     const bannerBefore = await fontSize(page, "header nav");
     const treeBefore = await fontSize(page, "aside a");
 
     await saveReadingSize(page, "14");
     await page.reload();
-    await expect(page.locator(".note-body p").first()).toBeVisible();
-    expect(await fontSize(page, ".note-body p")).toBe("14px");
+    await expect(page.locator(".kinari-body p").first()).toBeVisible();
+    expect(await fontSize(page, ".kinari-body p")).toBe("14px");
     expect(await fontSize(page, "header nav")).toBe(bannerBefore);
     expect(await fontSize(page, "aside a")).toBe(treeBefore);
   });
@@ -100,8 +100,8 @@ function notReloaded(page: Page) {
 
 // 本文の Mermaid の図。ブラウザで描くので、撮る前にこれで描き終わるのを待つ
 async function waitForDiagram(page: Page) {
-  await expect(page.locator(".note-body .mermaid-figure svg")).toBeVisible();
-  await expect(page.locator(".note-body pre[data-mermaid]")).toHaveCount(0);
+  await expect(page.locator(".kinari-body .mermaid-figure svg")).toBeVisible();
+  await expect(page.locator(".kinari-body pre[data-mermaid]")).toHaveCount(0);
 }
 
 test.describe("上の帯の「Aa」を出す画面", () => {
@@ -202,11 +202,11 @@ test.describe("「Aa」の枠で選ぶ", () => {
     const bannerBefore = await fontSize(page, "header nav");
     const treeBefore = await fontSize(page, "aside a");
     const choiceBefore = await fontSize(page, '[role="radiogroup"] [role="radio"]');
-    expect(await fontSize(page, ".note-body p")).toBe("16px");
+    expect(await fontSize(page, ".kinari-body p")).toBe("16px");
     await markPage(page);
 
     await choice(page, "14px").check();
-    expect(await fontSize(page, ".note-body p")).toBe("14px");
+    expect(await fontSize(page, ".kinari-body p")).toBe("14px");
     expect(await fontSize(page, "header nav")).toBe(bannerBefore);
     expect(await fontSize(page, "aside a")).toBe(treeBefore);
     expect(await fontSize(page, '[role="radiogroup"] [role="radio"]')).toBe(choiceBefore);
@@ -225,11 +225,11 @@ test.describe("「Aa」の枠で選ぶ", () => {
 
     await page.getByRole("article").getByRole("link", { name: "リリースの手順" }).click();
     await expect(page.getByRole("heading", { level: 1, name: "リリースの手順" })).toBeVisible();
-    expect(await fontSize(page, ".note-body p")).toBe("14px");
+    expect(await fontSize(page, ".kinari-body p")).toBe("14px");
 
     await page.reload();
-    await expect(page.locator(".note-body p").first()).toBeVisible();
-    expect(await fontSize(page, ".note-body p")).toBe("14px");
+    await expect(page.locator(".kinari-body p").first()).toBeVisible();
+    expect(await fontSize(page, ".kinari-body p")).toBe("14px");
     await openSizeMenu(page);
     await expect(choice(page, "14px")).toBeChecked();
   });

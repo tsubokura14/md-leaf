@@ -1,8 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import type { NoteHeading } from "./headings";
 import noteCategories from "./note-categories.json";
-import { renderMarkdown } from "./markdown";
+import { type Heading, renderMarkdown } from "./markdown";
 import { imageContentType } from "./note-files";
 import { decodeSegment, toNotePath } from "./note-url";
 
@@ -35,7 +34,7 @@ export type Note = {
   path: string;
   title: string;
   html: string;
-  headings: NoteHeading[];
+  headings: Heading[];
 };
 
 const HOME_FILE = "index.md";

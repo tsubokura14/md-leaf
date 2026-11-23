@@ -182,8 +182,8 @@ function notReloaded(page: Page) {
 
 // 本文の Mermaid の図。ブラウザで描くので、撮る前にこれで描き終わるのを待つ
 async function waitForDiagram(page: Page) {
-  await expect(page.locator(".note-body .mermaid-figure svg")).toBeVisible();
-  await expect(page.locator(".note-body pre[data-mermaid]")).toHaveCount(0);
+  await expect(page.locator(".kinari-body .mermaid-figure svg")).toBeVisible();
+  await expect(page.locator(".kinari-body pre[data-mermaid]")).toHaveCount(0);
 }
 
 test.describe("ログインの画面のライト/ダーク", () => {
@@ -308,7 +308,7 @@ test.describe("上の帯のテーマの枠で選ぶ", () => {
     await themeChoice(page, "dark").click();
     await page.keyboard.press("Escape");
     await expectTheme(page, "dark", "dark");
-    await waitForHydration(page.locator(".note-body"));
+    await waitForHydration(page.locator(".kinari-body"));
     await page.getByRole("article").getByRole("link", { name: "Docker のメモ" }).click();
     await expect(page.getByRole("heading", { level: 1, name: "Docker のメモ" })).toBeVisible();
     await expectTheme(page, "dark", "dark");
@@ -365,7 +365,7 @@ test.describe("上の帯のテーマの枠で選ぶ", () => {
 // 本文の Mermaid の図の線（矢印）の色と、今の文字の色（トークンの --color-text）を、同じ rgb() の形で返す
 function diagramLineAndTextColor(page: Page) {
   return page.evaluate(() => {
-    const line = document.querySelector(".note-body .mermaid-figure svg .flowchart-link");
+    const line = document.querySelector(".kinari-body .mermaid-figure svg .flowchart-link");
     const probe = document.createElement("span");
     probe.style.color = "var(--color-text)";
     document.body.append(probe);
@@ -383,7 +383,7 @@ test.describe("切り替えたときの Mermaid の図", () => {
 
   test("枠で選ぶと、図の線の色がその場で今の文字の色に変わる", async ({ page }) => {
     await page.goto(GIT_NOTE);
-    await expect(page.locator(".note-body .mermaid-figure svg .flowchart-link")).not.toHaveCount(0);
+    await expect(page.locator(".kinari-body .mermaid-figure svg .flowchart-link")).not.toHaveCount(0);
     const light = await diagramLineAndTextColor(page);
     expect(light.line).toBe(light.text);
 
@@ -402,8 +402,8 @@ test.describe("切り替えたときの Mermaid の図", () => {
     page,
   }) => {
     await page.goto(GIT_NOTE);
-    await expect(page.locator(".note-body .mermaid-figure svg .flowchart-link")).not.toHaveCount(0);
-    await waitForHydration(page.locator(".note-body"));
+    await expect(page.locator(".kinari-body .mermaid-figure svg .flowchart-link")).not.toHaveCount(0);
+    await waitForHydration(page.locator(".kinari-body"));
     const light = await diagramLineAndTextColor(page);
     expect(light.line).toBe(light.text);
 

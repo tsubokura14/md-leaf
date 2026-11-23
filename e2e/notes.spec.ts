@@ -24,8 +24,8 @@ function sidebar(page: Page) {
 
 // 本文の Mermaid の図。ブラウザで描くので、撮る前にこれで描き終わるのを待つ（描き終わるまでは元のコードが出ている）
 async function waitForDiagram(page: Page) {
-  await expect(page.locator(".note-body .mermaid-figure svg")).toBeVisible();
-  await expect(page.locator(".note-body pre[data-mermaid]")).toHaveCount(0);
+  await expect(page.locator(".kinari-body .mermaid-figure svg")).toBeVisible();
+  await expect(page.locator(".kinari-body pre[data-mermaid]")).toHaveCount(0);
 }
 
 // ダークを選んであるブラウザにする（キーは src/components/theme.ts の THEME_KEY）
@@ -123,7 +123,7 @@ test.describe("ノート", () => {
       await page.goto("/notes/実践/開発/リリースの手順");
       await expect(page.getByRole("heading", { level: 1, name: "リリースの手順" })).toBeVisible();
       if (dark) await expect(darkThemeIcon(page)).toBeVisible();
-      const callouts = page.locator(".note-body > .callout");
+      const callouts = page.locator(".kinari-body > .callout");
       await expect(callouts).toHaveCount(14);
       const first = await callouts.nth(1).boundingBox();
       const last = await callouts.nth(13).boundingBox();
@@ -173,7 +173,7 @@ test.describe("ノート", () => {
     // 見本のノートの長い行（git branch -d "12-due-date-input"）が、撮る環境の等幅の字で収まらない幅
     await page.setViewportSize({ width: 240, height: 800 });
     await page.goto(GIT_NOTE);
-    const body = page.locator(".note-body");
+    const body = page.locator(".kinari-body");
     await expect(body.locator(".table-scroll")).toHaveCSS("overflow-x", "auto");
     await expect(body.locator(".katex-display")).toHaveCSS("overflow-x", "auto");
     await waitForDiagram(page);
@@ -191,7 +191,7 @@ test.describe("ノート", () => {
 
   test("mermaid のコードは、ブラウザで図（SVG）に描かれる", async ({ page }) => {
     await page.goto(GIT_NOTE);
-    const diagram = page.locator(".note-body .mermaid-figure svg");
+    const diagram = page.locator(".kinari-body .mermaid-figure svg");
     await expect(diagram).toBeVisible();
     await expect(diagram.getByText("ブランチ", { exact: true })).toBeVisible();
   });
@@ -200,10 +200,10 @@ test.describe("ノート", () => {
     page,
   }) => {
     await page.goto(GIT_NOTE);
-    const title = page.locator(".note-body summary", {
+    const title = page.locator(".kinari-body summary", {
       hasText: "消してしまったブランチを戻すには",
     });
-    const content = page.locator(".note-body").getByText("で消す前のコミットを探し");
+    const content = page.locator(".kinari-body").getByText("で消す前のコミットを探し");
     await expect(title).toBeVisible();
     await expect(content).toBeHidden();
     await title.click();
@@ -216,7 +216,7 @@ test.describe("ノート", () => {
     page,
   }) => {
     await page.goto(GIT_NOTE);
-    const body = page.locator(".note-body");
+    const body = page.locator(".kinari-body");
     const figure = body.locator("figure", { has: page.getByRole("img", { name: "ブランチの図" }) });
     const image = figure.getByRole("img");
     await expect(image).toBeVisible();
@@ -304,7 +304,7 @@ test.describe("本文のノートへのリンク", () => {
 
   // 本文のリンクは React の部品が受けるので、つながる前に押すと、ふつうのページの移動になる
   async function waitForBody(page: Page) {
-    await waitForHydration(page.locator(".note-body"));
+    await waitForHydration(page.locator(".kinari-body"));
   }
 
   test("PC：ノートからノートへ、読み込み直さずに移り、場所・一覧の強調・ページの題が変わる", async ({
