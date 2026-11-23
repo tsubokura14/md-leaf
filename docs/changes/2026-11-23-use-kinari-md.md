@@ -52,7 +52,7 @@
 
 - #32（トークンの名前をシリーズで揃える）：main に入った
 - #33（`<html>` の `data-theme` でライト・ダークを決める）：main に入った
-- tsubokura14/kinari-md#7（本文の見出しと小さめの字の倍率を、移す前の md-leaf に合わせる）：閉じた。直した版 v0.1.1 のタグが出た（h2 1.41em・h3 1.18em・小さめの字 0.82em）。md-leaf はこの版を入れる（このブランチで `npm install github:tsubokura14/kinari-md#v0.1.1` 済み。`package.json`・`package-lock.json` だけで、まだどこからも使っていない）
+- tsubokura14/kinari-md#7（本文の見出しと小さめの字の倍率を、移す前の md-leaf に合わせる）：閉じた。直した版 v0.1.1 のタグが出た（h2 1.41em・h3 1.18em・小さめの字 0.82em）。md-leaf はこの版を入れる（このブランチで入れた）
 
 ## 決まっていないこと
 
