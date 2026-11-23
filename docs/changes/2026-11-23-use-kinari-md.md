@@ -92,7 +92,39 @@
 
 ## 設計
 
-<!-- /dev-build で書く -->
+データの変更はない。ノートの読み込み（`src/lib/notes.ts`）と、ページ・目次への渡し方（題・HTML・見出しの一覧）は今のまま。中で使う変換と、本文の見た目・図を kinari-md に替える。
+
+### 変換（`src/lib/`）
+
+- `src/lib/markdown.ts` を、kinari-md の `renderMarkdown` を呼ぶだけの薄い入口にする。今の `renderMarkdown(source, links?)` と `NoteLinkContext` の形は変えない（`notes.ts` は今のまま呼べる）
+  - `links` があれば、`resolve` に渡す関数を作る。リンク（`kind: "link"`）は `note-links.ts` の `resolveNoteLink`、画像（`kind: "image"`）は `note-images.ts` の `resolveImageSrc` で決め、今と同じ条件で `missing` を返す（リンク：外を指す・一覧にない。画像：外を指す・対象外の拡張子・ファイルがない）。どちらも対象でなければ `undefined`（書き換えない）
+  - 見出しの型は kinari-md の `Heading` を使う（形は今の `NoteHeading` と同じ）。`toc.tsx`・`note-body.tsx`・`notes.ts` はここから読む
+- `note-images.ts` は `resolveImageSrc` だけを残す（hast のプラグイン `noteImages` と figure にする処理は kinari-md に任せる）。`note-links.ts` は変えない
+- 消す：`callouts.ts`・`tables.ts`・`math.ts`・`highlight.ts`・`headings.ts` と、そのテスト（中身は kinari-md にあり、kinari-md がテストする）
+- `next.config.ts` に `transpilePackages: ["kinari-md"]` を足す。Vitest で kinari-md（TS のまま）を読めなければ、`vitest.config.mts` で kinari-md を変換の対象にする（`server.deps.inline`）
+- `next.config.ts` は `src/lib/notes.ts`（→ `markdown.ts` → kinari-md）を読む。設定を読むときに kinari-md を読めなければ、`listNotePaths`・`contentDir` が変換を読まずに済むようにファイルを分ける（どこで分けたかは「AIが決めたこと」に書く）
+
+### 本文の見た目と図（`src/components/`・`src/styles/`）
+
+- 本文の入れ物のクラスを `.note-body` から `.kinari-body` にする。`note-body.tsx` は `kinari-md/body.css` を読み（KaTeX の CSS は body.css が読むので、`katex/dist/katex.min.css` の読み込みを消す）、`kinari-md/tokens.css` は `globals.css` でトークンのあとに読む（`:root` と `[data-theme="dark"]` の変数なので、どのページでも同じに効かせる）
+- `note-body.css` は、見出しの `scroll-margin-top`（`.kinari-body [data-heading]`）だけを残す。ほかに body.css との違いが見つかったら、仕様の「やらないこと」のとおり md-leaf では上書きせず、止まって伝える
+- `src/styles/tokens.css` から、Markdown だけが使う色（`--color-abstract`・`--color-important`・`--color-caution`・`--color-code-keyword`・`--color-code-string`・`--color-code-comment` と、その `--c-*` のライト・ダークの値）と表の列の幅（`--table-col-m`・`--table-col-l`）を消す（kinari-md の tokens.css が同じ値を持つ）。`.reading` の `--text-*` の倍率は、ノートの題（h1）が使うので残す
+- `note-body-content.tsx`：図は kinari-md の `drawMermaid(body)` を `useEffect` で呼び、返った関数で後片付けする。ノートへのリンクを見分ける印を `a[data-note-link]` から `a[data-internal-link]` にする（`router.push` の動きと、渡してよい href の前提は今のまま）。`src/components/mermaid.ts` を消す
+- `eslint.config.mjs` の `no-unknown-classes` の `ignore` を `^note-body$` から `^kinari-body$` に替える
+- 画面を動かすテスト（`e2e/`）の `.note-body` を `.kinari-body` に替える。画像の基準（`docs/specs/screens/`）は変えない
+
+### 依存と文書
+
+- `package.json` から、直接使わなくなるものを外す：`highlight.js`・`katex`・`mermaid`・`rehype-stringify`・`remark-breaks`・`remark-cjk-friendly`・`remark-rehype`、devDependencies の `@types/hast`・`@types/mdast`・`vfile`（`src/` と `scripts/` で読まなくなったものだけ）。保管庫の検査（`scripts/check-content.mjs`）が直接読む `unified`・`remark-parse`・`remark-gfm`・`remark-frontmatter`・`remark-math`・`yaml` は残す（版は kinari-md と同じなので1つにまとまる）
+- `docs/libraries/kinari-md.md` を書く。外したライブラリの `docs/libraries/`（highlight.js・katex・mermaid・remark-breaks・remark-cjk-friendly）は消し、`unified.md`・`remark-math.md`・`yaml.md` は保管庫の検査での使い方だけにする
+- `docs/design.md`（「全体の構成」の `src/lib/`・`note-body.css`、「トークンにない値を書かない」の `.note-body`、当てはまる場所）、`docs/overview.md`（技術の Markdown の変換・図の行）、`docs/ui.md`（abstract・important・caution の色が kinari-md のトークンになること）、`docs/specs/notes.md`（本文の出し方の言い方）、`CLAUDE.project.md`（技術の Markdown の変換の行）を合わせる
+
+### 理由と残す場所
+
+- 変換の入口（`markdown.ts`）を残して中だけ替える：`notes.ts` とページを変えずに済み、レビューで差を追いやすい。理由はコメントではなく、この仕様に残す（コードに経緯を書かない）
+- リンクと画像の決め方を md-leaf に残す理由（ノートの URL とコンテンツフォルダの決まりは md-leaf のもの、保管庫の検査が書き写している）は、`docs/design.md` の「保管庫には決まりに合うものだけを置く」の前提に残す
+- 本文の HTML を `dangerouslySetInnerHTML` で入れてよい前提（HTML のタグは文字にし、raw を作るのは KaTeX と highlight.js だけ）は kinari-md が持つ。`note-body-content.tsx` のコメントで kinari-md の決まりを指す
+- `scroll-margin-top` を md-leaf に残す理由（上の帯の高さは md-leaf の画面の決まり）は `note-body.css` のコメントに残す
 
 ## AIが決めたこと
 
@@ -103,11 +135,26 @@
 - Markdown だけが使う色と表の列の幅は、md-leaf のトークンファイルから外す。理由：同じ値を2か所に持たない。値は kinari-md と同じなので、見た目は変わらない
 - 直接使わなくなるパッケージ（unified・remark・rehype・highlight.js・KaTeX・yaml・mermaid）は md-leaf の依存から外す。理由：版を kinari-md の1か所で決める。md-leaf に残すと、版がずれて同じものが2つ入りうる
 - kinari-md の版はタグで固定する（`#v0.1.1`）。理由：README の入れ方のとおり。npm には出していない
+- 外す依存は「`src/` と `scripts/` で直接読まなくなったもの」だけにした。理由：保管庫の検査（`scripts/check-content.mjs`）が unified・remark・yaml を直接読んでおり、仕様の「やらないこと」で検査は md-leaf に残す。比べた案：全部外して kinari-md から引き込まれるものに頼る（npm の置き方しだいで読めなくなるので選ばない）
+- 変換のテストは、md-leaf が持つもの（リンクと画像の決め方、`resolve` のつなぎ方、題の扱い、HTML のタグが文字になること1件）だけを残し、コールアウト・表・数式・コード・見出しの一覧のテストは消す。理由：同じテストを kinari-md と2か所に持たない。見た目は画像を比べるテストが基準の画像のまま通ることで確かめる
+- `kinari-md/tokens.css` は `globals.css` で、`kinari-md/body.css` は `note-body.tsx` で読む。理由：トークンは `:root` の変数で、ほかのトークンと同じ場所にそろえる。本文の CSS（KaTeX を含む）は、今の KaTeX の CSS と同じく本文の部品が読む
 
 ## 確かめ方
 
-<!-- /dev-build で書く -->
+| 受け入れ条件 | 確かめ方 |
+| --- | --- |
+| 本文が今と同じ見た目（ライト・ダーク） | テスト：画像を比べるテスト（`npm run test:visual`）が、基準の画像（`docs/specs/screens/`）を撮り直さずに通る。画面を動かすテスト（`e2e/notes.spec.ts`）のコールアウト・数式・表・図の確かめも通る |
+| 文字の大きさを変えると本文だけが同じ比率で変わる | テスト：`e2e/reading-size.spec.ts` と、文字の大きさごとの画像のテストが基準のまま通る |
+| フロントマターを出さず、`title` かファイル名を題にする | テスト：`src/lib/markdown.test.ts`・`src/lib/notes.test.ts` |
+| 目次が今と同じに出て、押すと見出しが上の帯のすぐ下に来る | テスト：`e2e/toc.spec.ts` |
+| 相対リンクで読み込み直さずに移る・ないときは「ノートが見つかりません」・外へのリンクは別のタブ | テスト：`src/lib/markdown.test.ts`（書き換えと `data-internal-link`・切れたリンクの一覧・外へのリンク）、`src/components/note-body-content.test.tsx`、`e2e/notes.spec.ts` |
+| 画像が今と同じに出る・切れた画像は出さず警告 | テスト：`src/lib/markdown.test.ts`（`/files/` への書き換えと切れた画像の一覧）、`src/lib/notes.test.ts`（警告）、画像の入ったノートの画像のテスト |
+| ライト・ダークを切り替えると図が描き直される | テスト：`e2e/theme.spec.ts`（ボタンで選んだときと、端末の設定が変わったとき） |
+| HTML のタグは文字として出る | テスト：`src/lib/markdown.test.ts` |
+| 保管庫の検査とビルドの止め方は変わらない | テスト：`scripts/check-content.test.mjs`・`scripts/prepare-content.test.mjs`。触って確かめる：PR の Vercel のプレビューのビルドが成功する（GitHub のタグから kinari-md を取れる） |
 
 ## タスク
 
-<!-- /dev-build で書く -->
+- [ ] 変換を kinari-md に替える：`markdown.ts` が kinari-md の `renderMarkdown` に `resolve` を渡す入口になり、消すファイル（callouts・tables・math・highlight・headings）を消し、本文のリンクの印が `data-internal-link` になって、`npm test`・`npm run typecheck` が通ったら完了（本文の CSS はまだ `.note-body` のまま。HTML は今と同じなので見た目は変わらない）
+- [ ] 本文の見た目と図を kinari-md に替える：本文が `.kinari-body` と kinari-md の CSS・トークンで出て、図が `drawMermaid` で描かれ、md-leaf のトークンから Markdown だけの値が消え、画像を比べるテストが基準の画像（`docs/specs/screens/` のすべて。撮り直さない）のまま通ったら完了
+- [ ] 依存と文書を整える：直接使わなくなるパッケージを `package.json` から外し、`docs/libraries/kinari-md.md` を書き、`docs/design.md`・`docs/overview.md`・`docs/ui.md`・`docs/specs/notes.md`・`CLAUDE.project.md`・`docs/libraries/` が今のコードに合ったら完了
