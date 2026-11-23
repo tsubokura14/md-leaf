@@ -69,7 +69,7 @@ async function drawDiagrams(body: HTMLElement, isCancelled: () => boolean) {
 }
 
 function isDark(): boolean {
-  return document.documentElement.classList.contains("dark");
+  return document.documentElement.getAttribute("data-theme") === "dark";
 }
 
 /** ノートの本文（HTML）。ノートへのリンクを押すと、読み込み直さずに移る。Mermaid の図はここで描き、ライト・ダークが変わると描き直す */
@@ -88,15 +88,15 @@ export function NoteBodyContent({ html }: NoteBodyContentProps) {
       void drawDiagrams(body, () => current !== run);
     };
     draw();
-    // ライト・ダークは <html> の .dark だけで決まる（src/components/theme.ts）。ボタンで押したときも、
-    // 一度も選んでいないあいだに端末の設定が変わったときも、ここで同じように描き直す
+    // 今出している色は <html> の data-theme だけで決まる（src/components/theme.ts）。ボタンで選んだときも、
+    // 「端末に合わせる」で端末の設定が変わったときも、ここで同じように描き直す
     let dark = isDark();
     const observer = new MutationObserver(() => {
       if (isDark() === dark) return;
       dark = isDark();
       draw();
     });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     return () => {
       observer.disconnect();
       run += 1;

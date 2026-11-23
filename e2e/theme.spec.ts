@@ -7,15 +7,36 @@ import { allowedTestEmail } from "./test-env";
 const THEME_KEY = "md-leaf-theme";
 
 /** ページのスクリプトより前に、ブラウザに選んだものを保存しておく */
-async function saveTheme(page: Page, theme: "light" | "dark") {
+async function saveTheme(page: Page, theme: string) {
   await page.addInitScript(([key, value]) => window.localStorage.setItem(key, value), [
     THEME_KEY,
     theme,
   ] as const);
 }
 
+/** 保存が禁止されているブラウザと同じく、localStorage に触ると例外を投げるようにする */
+async function denyStorage(page: Page) {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "localStorage", {
+      get() {
+        throw new DOMException("denied", "SecurityError");
+      },
+    });
+  });
+}
+
 function html(page: Page) {
   return page.locator("html");
+}
+
+/** <html> の印：今出している色（data-theme）と、選んでいるもの（data-theme-choice） */
+async function expectTheme(
+  page: Page,
+  theme: "light" | "dark",
+  choice: "system" | "light" | "dark",
+) {
+  await expect(html(page)).toHaveAttribute("data-theme", theme);
+  await expect(html(page)).toHaveAttribute("data-theme-choice", choice);
 }
 
 test.describe("開いたときのライト/ダーク", () => {
@@ -23,55 +44,76 @@ test.describe("開いたときのライト/ダーク", () => {
     await logIn(context, baseURL, allowedTestEmail);
   });
 
-  test("一度も選んでいなければ、端末の設定がダークならダークで出る", async ({ page }) => {
+  test("一度も選んでいなければ「端末に合わせる」で、端末の設定がダークならダークで出る", async ({
+    page,
+  }) => {
     await page.emulateMedia({ colorScheme: "dark" });
     await page.goto("/");
-    await expect(html(page)).toHaveClass(/(^|\s)dark(\s|$)/);
+    await expectTheme(page, "dark", "system");
   });
 
-  test("一度も選んでいなければ、端末の設定がライトならライトで出る", async ({ page }) => {
-    await page.emulateMedia({ colorScheme: "light" });
-    await page.goto("/");
-    await expect(page.getByRole("banner")).toBeVisible();
-    await expect(html(page)).not.toHaveClass(/(^|\s)dark(\s|$)/);
-  });
-
-  test("一度も選んでいなければ、開いているあいだに端末の設定が変わると合わせ直す", async ({
+  test("一度も選んでいなければ、端末の設定がライトならライトで出て、開いているあいだに端末の設定が変わると合わせ直す", async ({
     page,
   }) => {
     await page.emulateMedia({ colorScheme: "light" });
     await page.goto("/");
     await expect(page.getByRole("banner")).toBeVisible();
+    await expectTheme(page, "light", "system");
     await page.emulateMedia({ colorScheme: "dark" });
-    await expect(html(page)).toHaveClass(/(^|\s)dark(\s|$)/);
+    await expectTheme(page, "dark", "system");
   });
 
-  test("ライトを選んだあとは、端末の設定がダークでもライトで出る", async ({ page }) => {
+  test("「端末に合わせる」を保存していれば、端末の設定に合わせ、変わると合わせ直す", async ({
+    page,
+  }) => {
+    await saveTheme(page, "system");
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.goto("/");
+    await expectTheme(page, "dark", "system");
+    await page.emulateMedia({ colorScheme: "light" });
+    await expectTheme(page, "light", "system");
+  });
+
+  test("知らない値が保存されていれば「端末に合わせる」として扱う", async ({ page }) => {
+    await saveTheme(page, "sepia");
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.goto("/");
+    await expectTheme(page, "dark", "system");
+  });
+
+  test("ライトを選んだあと（前の版の値）は、端末の設定がダークでもライトで出て、変わってもライトのまま", async ({
+    page,
+  }) => {
     await saveTheme(page, "light");
     await page.emulateMedia({ colorScheme: "dark" });
     await page.goto("/");
     await expect(page.getByRole("banner")).toBeVisible();
-    await expect(html(page)).not.toHaveClass(/(^|\s)dark(\s|$)/);
-  });
-
-  test("ダークを選んだあとは、端末の設定がライトでもダークで出る", async ({ page }) => {
-    await saveTheme(page, "dark");
+    await expectTheme(page, "light", "light");
     await page.emulateMedia({ colorScheme: "light" });
-    await page.goto("/");
-    await expect(html(page)).toHaveClass(/(^|\s)dark(\s|$)/);
+    await page.emulateMedia({ colorScheme: "dark" });
+    await expectTheme(page, "light", "light");
   });
 
-  test("ダークを保存して開くと、<body> ができた時点で <html> に .dark がある（ちらつかない）", async ({
+  test("ダークを選んだあと（前の版の値）は、端末の設定がライトでもダークで出る", async ({
     page,
   }) => {
     await saveTheme(page, "dark");
     await page.emulateMedia({ colorScheme: "light" });
-    // <body> が DOM に入った瞬間の <html> のクラスを記録する。描く前の状態を見るため
+    await page.goto("/");
+    await expectTheme(page, "dark", "dark");
+  });
+
+  test("ダークを保存して開くと、<body> ができた時点で <html> が data-theme=dark（ちらつかない）", async ({
+    page,
+  }) => {
+    await saveTheme(page, "dark");
+    await page.emulateMedia({ colorScheme: "light" });
+    // <body> が DOM に入った瞬間の <html> の印を記録する。描く前の状態を見るため
     await page.addInitScript(() => {
-      const record = window as unknown as { darkAtBody?: boolean };
+      const record = window as unknown as { themeAtBody?: string | null };
       const observer = new MutationObserver(() => {
         if (document.body) {
-          record.darkAtBody = document.documentElement.classList.contains("dark");
+          record.themeAtBody = document.documentElement.getAttribute("data-theme");
           observer.disconnect();
         }
       });
@@ -79,26 +121,50 @@ test.describe("開いたときのライト/ダーク", () => {
     });
     await page.goto("/");
     expect(
-      await page.evaluate(() => (window as unknown as { darkAtBody?: boolean }).darkAtBody),
-    ).toBe(true);
+      await page.evaluate(() => (window as unknown as { themeAtBody?: string | null }).themeAtBody),
+    ).toBe("dark");
   });
-});
 
-test.describe("ログインの画面のライト/ダーク", () => {
-  test("ダークを保存して開くとダークで出て、切り替えのボタンはない", async ({ page }) => {
-    await saveTheme(page, "dark");
-    await page.emulateMedia({ colorScheme: "light" });
-    await page.goto("/login");
-    await expect(page.getByRole("button", { name: "Google でログインする" })).toBeVisible();
-    await expect(html(page)).toHaveClass(/(^|\s)dark(\s|$)/);
-    await expect(page.getByRole("button", { name: /ダークにする|ライトにする/ })).toHaveCount(0);
+  test("ブラウザに覚えておけないときは、開いた直後から「端末に合わせる」で出る", async ({
+    page,
+  }) => {
+    await denyStorage(page);
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.goto("/");
+    await expectTheme(page, "dark", "system");
   });
 });
 
 const GIT_NOTE = "/notes/実践/開発/Git ブランチの運用メモ";
+const PC = { width: 1440, height: 900 };
 
-function toggle(page: Page, name: "ダークにする" | "ライトにする") {
-  return page.getByRole("banner").getByRole("button", { name });
+type Choice = "system" | "light" | "dark";
+const CHOICE_NAMES = { system: "端末に合わせる", light: "ライト", dark: "ダーク" } as const;
+
+function themeButton(page: Page) {
+  return page.getByRole("banner").getByRole("button", { name: "テーマ" });
+}
+
+function themeChoices(page: Page) {
+  return page.getByRole("radiogroup", { name: "テーマ" });
+}
+
+function themeChoice(page: Page, choice: Choice) {
+  return themeChoices(page).getByRole("radio", { name: CHOICE_NAMES[choice] });
+}
+
+async function openThemeMenu(page: Page) {
+  await clickWhenHydrated(themeButton(page));
+  await expect(themeChoices(page)).toBeVisible();
+}
+
+/** ボタンに見えているアイコンが、選んでいるもののものだけであること */
+async function expectButtonIcon(page: Page, choice: Choice) {
+  for (const icon of ["system", "light", "dark"] as const) {
+    const locator = themeButton(page).locator(`[data-theme-icon="${icon}"]`);
+    if (icon === choice) await expect(locator).toBeVisible();
+    else await expect(locator).toBeHidden();
+  }
 }
 
 // ページを読み込み直すと消える印を置く。あとで残っていれば、読み込み直していない
@@ -114,63 +180,185 @@ function notReloaded(page: Page) {
   );
 }
 
-test.describe("上の帯のボタンでの切り替え", () => {
+// 本文の Mermaid の図。ブラウザで描くので、撮る前にこれで描き終わるのを待つ
+async function waitForDiagram(page: Page) {
+  await expect(page.locator(".note-body .mermaid-figure svg")).toBeVisible();
+  await expect(page.locator(".note-body pre[data-mermaid]")).toHaveCount(0);
+}
+
+test.describe("ログインの画面のライト/ダーク", () => {
+  test("ダークを保存して開くとダークで出て、切り替えのボタンはない", async ({ page }) => {
+    await saveTheme(page, "dark");
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.goto("/login");
+    await expect(page.getByRole("button", { name: "Google でログインする" })).toBeVisible();
+    await expectTheme(page, "dark", "dark");
+    await expect(page.getByRole("button", { name: "テーマ" })).toHaveCount(0);
+  });
+
+  test("何も保存していなければ、端末の設定で出る", async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.goto("/login");
+    await expect(page.getByRole("button", { name: "Google でログインする" })).toBeVisible();
+    await expectTheme(page, "dark", "system");
+  });
+});
+
+test.describe("上の帯のテーマのボタンのアイコン", () => {
   test.beforeEach(async ({ context, baseURL, page }) => {
     await logIn(context, baseURL, allowedTestEmail);
     await page.emulateMedia({ colorScheme: "light" });
   });
 
-  test("「ダークにする」を押すとダークになり「ライトにする」に変わり、押すとライトに戻る。読み込み直さない", async ({
+  test("一度も選んでいなければ、半分を塗った丸が出る", async ({ page }) => {
+    await page.goto(GIT_NOTE);
+    await expectButtonIcon(page, "system");
+  });
+
+  test("ライトを選んでいれば太陽が出る", async ({ page }) => {
+    await saveTheme(page, "light");
+    await page.goto(GIT_NOTE);
+    await expectButtonIcon(page, "light");
+    await waitForDiagram(page);
+    await expect(page).toHaveScreenshot("note-theme-light.png");
+  });
+
+  test("ダークを選んでいれば、PC でも月が出る", async ({ page }) => {
+    await saveTheme(page, "dark");
+    await page.setViewportSize(PC);
+    await page.goto(GIT_NOTE);
+    await expectButtonIcon(page, "dark");
+  });
+});
+
+test.describe("上の帯のテーマの枠で選ぶ", () => {
+  test.beforeEach(async ({ context, baseURL, page }) => {
+    await logIn(context, baseURL, allowedTestEmail);
+    await page.emulateMedia({ colorScheme: "light" });
+  });
+
+  test("押すと枠が出て、見出し「テーマ」と3つが並び、一度も選んでいなければ「端末に合わせる」が選ばれている", async ({
     page,
   }) => {
     await page.goto(GIT_NOTE);
+    await openThemeMenu(page);
+    await expect(themeButton(page)).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByText("テーマ", { exact: true })).toBeVisible();
+    await expect(themeChoices(page).getByRole("radio")).toHaveText([
+      "端末に合わせる",
+      "ライト",
+      "ダーク",
+    ]);
+    await expect(themeChoice(page, "system")).toBeChecked();
+    await expect(themeChoice(page, "light")).not.toBeChecked();
+    await expect(themeChoice(page, "dark")).not.toBeChecked();
+    await waitForDiagram(page);
+    await expect(page).toHaveScreenshot("note-theme-menu.png");
+  });
+
+  test("前の版でダークを選んでいれば、枠で「ダーク」が選ばれている", async ({ page }) => {
+    await saveTheme(page, "dark");
+    await page.goto(GIT_NOTE);
+    await openThemeMenu(page);
+    await expect(themeChoice(page, "dark")).toBeChecked();
+    await expect(themeChoice(page, "system")).not.toBeChecked();
+    await waitForDiagram(page);
+    await expect(page).toHaveScreenshot("note-theme-menu-dark.png");
+  });
+
+  test("「ダーク」「ライト」を押すと、読み込み直さずにその色になり、アイコンも変わり、枠は開いたまま", async ({
+    page,
+  }) => {
+    await page.goto(GIT_NOTE);
+    await openThemeMenu(page);
     await markPage(page);
-    await clickWhenHydrated(toggle(page, "ダークにする"));
-    await expect(html(page)).toHaveClass(/(^|\s)dark(\s|$)/);
-    await expect(toggle(page, "ダークにする")).toHaveCount(0);
-    await clickWhenHydrated(toggle(page, "ライトにする"));
-    await expect(html(page)).not.toHaveClass(/(^|\s)dark(\s|$)/);
-    await expect(toggle(page, "ダークにする")).toBeVisible();
+
+    await themeChoice(page, "dark").click();
+    await expectTheme(page, "dark", "dark");
+    await expectButtonIcon(page, "dark");
+    await expect(themeChoice(page, "dark")).toBeChecked();
+    await expect(themeChoices(page)).toBeVisible();
+
+    await themeChoice(page, "light").click();
+    await expectTheme(page, "light", "light");
+    await expectButtonIcon(page, "light");
+    await expect(themeChoice(page, "light")).toBeChecked();
+    await expect(themeChoices(page)).toBeVisible();
     expect(await notReloaded(page)).toBe(true);
   });
 
-  test("ダークにしたあと、別のノートへ移っても、読み込み直しても、ダークのまま", async ({
+  test("ダークを選んでいるときに「端末に合わせる」を押すと、端末の設定の色になり、以後は端末の設定についていく", async ({
+    page,
+  }) => {
+    await saveTheme(page, "dark");
+    await page.goto(GIT_NOTE);
+    await openThemeMenu(page);
+    await themeChoice(page, "system").click();
+    await expectTheme(page, "light", "system");
+    await expectButtonIcon(page, "system");
+    await page.emulateMedia({ colorScheme: "dark" });
+    await expectTheme(page, "dark", "system");
+  });
+
+  test("ダークを選ぶと、別のノートへ移っても、読み込み直しても、ダークのままで、枠で「ダーク」が選ばれている", async ({
     page,
   }) => {
     await page.goto("/");
-    await clickWhenHydrated(toggle(page, "ダークにする"));
-    await expect(html(page)).toHaveClass(/(^|\s)dark(\s|$)/);
+    await openThemeMenu(page);
+    await themeChoice(page, "dark").click();
+    await page.keyboard.press("Escape");
+    await expectTheme(page, "dark", "dark");
     await waitForHydration(page.locator(".note-body"));
     await page.getByRole("article").getByRole("link", { name: "Docker のメモ" }).click();
     await expect(page.getByRole("heading", { level: 1, name: "Docker のメモ" })).toBeVisible();
-    await expect(html(page)).toHaveClass(/(^|\s)dark(\s|$)/);
+    await expectTheme(page, "dark", "dark");
     await page.reload();
-    await expect(toggle(page, "ライトにする")).toBeVisible();
-    await expect(html(page)).toHaveClass(/(^|\s)dark(\s|$)/);
+    await expectButtonIcon(page, "dark");
+    await expectTheme(page, "dark", "dark");
+    await openThemeMenu(page);
+    await expect(themeChoice(page, "dark")).toBeChecked();
   });
 
-  test("ブラウザに覚えておけなくても、押すとその場で切り替わり、エラーを出さない", async ({
+  test("ブラウザに覚えておけなくても、選ぶとその場で切り替わり、エラーを出さない", async ({
     page,
   }) => {
-    // 保存が禁止されているブラウザと同じく、localStorage に触ると例外を投げる
-    await page.addInitScript(() => {
-      Object.defineProperty(window, "localStorage", {
-        get() {
-          throw new DOMException("denied", "SecurityError");
-        },
-      });
-    });
+    await denyStorage(page);
     const errors: Error[] = [];
     page.on("pageerror", (error) => errors.push(error));
     await page.goto(GIT_NOTE);
-    await clickWhenHydrated(toggle(page, "ダークにする"));
-    await expect(html(page)).toHaveClass(/(^|\s)dark(\s|$)/);
-    await expect(toggle(page, "ライトにする")).toBeVisible();
-    // 押して選んだので、開いているあいだに端末の設定が変わっても上書きしない
+    await openThemeMenu(page);
+    await themeChoice(page, "dark").click();
+    await expectTheme(page, "dark", "dark");
+    await expectButtonIcon(page, "dark");
+    // 選んだので、開いているあいだに端末の設定が変わっても上書きしない
     await page.emulateMedia({ colorScheme: "dark" });
     await page.emulateMedia({ colorScheme: "light" });
-    await expect(html(page)).toHaveClass(/(^|\s)dark(\s|$)/);
+    await expectTheme(page, "dark", "dark");
     expect(errors).toEqual([]);
+  });
+
+  test("枠の外を押すと閉じる", async ({ page }) => {
+    await page.goto(GIT_NOTE);
+    await openThemeMenu(page);
+    await page.getByRole("heading", { level: 2, name: "流れ" }).click();
+    await expect(themeChoices(page)).toBeHidden();
+    await expect(themeButton(page)).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test("Esc で閉じ、ボタンにフォーカスが戻る", async ({ page }) => {
+    await page.goto(GIT_NOTE);
+    await openThemeMenu(page);
+    await themeChoice(page, "light").focus();
+    await page.keyboard.press("Escape");
+    await expect(themeChoices(page)).toBeHidden();
+    await expect(themeButton(page)).toBeFocused();
+  });
+
+  test("もう一度ボタンを押すと閉じる", async ({ page }) => {
+    await page.goto(GIT_NOTE);
+    await openThemeMenu(page);
+    await themeButton(page).click();
+    await expect(themeChoices(page)).toBeHidden();
   });
 });
 
@@ -193,19 +381,36 @@ test.describe("切り替えたときの Mermaid の図", () => {
     await page.emulateMedia({ colorScheme: "light" });
   });
 
-  test("切り替えると、図の線の色がその場で今の文字の色に変わる", async ({ page }) => {
+  test("枠で選ぶと、図の線の色がその場で今の文字の色に変わる", async ({ page }) => {
     await page.goto(GIT_NOTE);
     await expect(page.locator(".note-body .mermaid-figure svg .flowchart-link")).not.toHaveCount(0);
     const light = await diagramLineAndTextColor(page);
     expect(light.line).toBe(light.text);
 
-    await clickWhenHydrated(toggle(page, "ダークにする"));
-    await expect(html(page)).toHaveClass(/(^|\s)dark(\s|$)/);
+    await openThemeMenu(page);
+    await themeChoice(page, "dark").click();
+    await expectTheme(page, "dark", "dark");
     await expect.poll(async () => (await diagramLineAndTextColor(page)).line).not.toBe(light.line);
     const dark = await diagramLineAndTextColor(page);
     expect(dark.line).toBe(dark.text);
 
-    await clickWhenHydrated(toggle(page, "ライトにする"));
+    await themeChoice(page, "light").click();
     await expect.poll(async () => (await diagramLineAndTextColor(page)).line).toBe(light.text);
+  });
+
+  test("「端末に合わせる」で端末の設定が変わると、図の線の色がその場で今の文字の色に変わる", async ({
+    page,
+  }) => {
+    await page.goto(GIT_NOTE);
+    await expect(page.locator(".note-body .mermaid-figure svg .flowchart-link")).not.toHaveCount(0);
+    await waitForHydration(page.locator(".note-body"));
+    const light = await diagramLineAndTextColor(page);
+    expect(light.line).toBe(light.text);
+
+    await page.emulateMedia({ colorScheme: "dark" });
+    await expectTheme(page, "dark", "system");
+    await expect.poll(async () => (await diagramLineAndTextColor(page)).line).not.toBe(light.line);
+    const dark = await diagramLineAndTextColor(page);
+    expect(dark.line).toBe(dark.text);
   });
 });

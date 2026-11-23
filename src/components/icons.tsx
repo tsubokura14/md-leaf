@@ -138,7 +138,17 @@ export function AlertIcon({ className }: IconProps) {
   );
 }
 
-/** 月。ダークにするボタン */
+/** 半分を塗った丸。テーマの「端末に合わせる」 */
+export function SystemThemeIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3a9 9 0 0 0 0 18Z" fill="currentColor" />
+    </Svg>
+  );
+}
+
+/** 月。テーマの「ダーク」 */
 export function MoonIcon({ className }: IconProps) {
   return (
     <Svg className={className}>
@@ -147,7 +157,7 @@ export function MoonIcon({ className }: IconProps) {
   );
 }
 
-/** 太陽。ライトにするボタン */
+/** 太陽。テーマの「ライト」 */
 export function SunIcon({ className }: IconProps) {
   return (
     <Svg className={className}>

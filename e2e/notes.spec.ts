@@ -33,6 +33,11 @@ async function chooseDark(page: Page) {
   await page.addInitScript(() => window.localStorage.setItem("md-leaf-theme", "dark"));
 }
 
+// ダークを選んだときの、上の帯のテーマのボタンの月のアイコン。React が描き終わるのを待つ印に使う
+function darkThemeIcon(page: Page) {
+  return page.getByRole("banner").getByRole("button", { name: "テーマ" }).locator('[data-theme-icon="dark"]');
+}
+
 async function openDrawer(page: Page) {
   await clickWhenHydrated(page.getByRole("button", { name: "ノートの一覧を開く" }));
   await expect(drawer(page)).toBeVisible();
@@ -58,7 +63,7 @@ test.describe("ホーム", () => {
     await chooseDark(page);
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1, name: "ノートの入り口" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "ライトにする" })).toBeVisible();
+    await expect(darkThemeIcon(page)).toBeVisible();
     await expect(page).toHaveScreenshot("home-index-dark.png", { fullPage: true });
   });
 
@@ -106,7 +111,7 @@ test.describe("ノート", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: "Git ブランチの運用メモ" }),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: "ライトにする" })).toBeVisible();
+    await expect(darkThemeIcon(page)).toBeVisible();
     await waitForDiagram(page);
     await expect(page).toHaveScreenshot("note-default-dark.png", { fullPage: true });
   });
@@ -117,7 +122,7 @@ test.describe("ノート", () => {
       if (dark) await chooseDark(page);
       await page.goto("/notes/実践/開発/リリースの手順");
       await expect(page.getByRole("heading", { level: 1, name: "リリースの手順" })).toBeVisible();
-      if (dark) await expect(page.getByRole("button", { name: "ライトにする" })).toBeVisible();
+      if (dark) await expect(darkThemeIcon(page)).toBeVisible();
       const callouts = page.locator(".note-body > .callout");
       await expect(callouts).toHaveCount(14);
       const first = await callouts.nth(1).boundingBox();

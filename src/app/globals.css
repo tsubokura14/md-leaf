@@ -1,8 +1,15 @@
 @import "tailwindcss";
 @import "../styles/tokens.css";
 
-/* dark: の変形を、<html> の .dark のクラスに合わせる（src/components/theme.ts） */
-@custom-variant dark (&:where(.dark, .dark *));
+/* dark: の変形を、<html> の data-theme="dark" に合わせる（src/components/theme.ts） */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* theme-system: theme-light: theme-dark: の変形。<html> の data-theme-choice（選んでいるもの）に合わせる。
+   上の帯のテーマのボタンのアイコンの出し分けに使う（src/components/theme-menu.tsx）。
+   印がない（スクリプトが動かない）ときは、保存を読めないときと同じく「端末に合わせる」として出す */
+@custom-variant theme-system (&:where(:root:not([data-theme-choice="light"], [data-theme-choice="dark"]) *));
+@custom-variant theme-light (&:where([data-theme-choice="light"] *));
+@custom-variant theme-dark (&:where([data-theme-choice="dark"] *));
 
 /* reading: の変形。本文（.reading）を出しているページでだけ当てる（src/components/font-size-menu.tsx）。
    画面を移るあいだ、Next.js（React の Activity）は前のページを style の display: none で隠して残すので、

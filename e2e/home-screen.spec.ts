@@ -85,8 +85,12 @@ test.describe("時刻や電池の部分の色", () => {
     return page.locator('head meta[name="theme-color"]');
   }
 
-  function toggle(page: Page, name: "ダークにする" | "ライトにする") {
-    return page.getByRole("banner").getByRole("button", { name });
+  async function chooseTheme(page: Page, name: "ライト" | "ダーク") {
+    const choices = page.getByRole("radiogroup", { name: "テーマ" });
+    if (!(await choices.isVisible())) {
+      await clickWhenHydrated(page.getByRole("banner").getByRole("button", { name: "テーマ" }));
+    }
+    await choices.getByRole("radio", { name }).click();
   }
 
   test("ログインしていないときも、端末の設定に合わせた bg になる", async ({ page }) => {
@@ -97,7 +101,7 @@ test.describe("時刻や電池の部分の色", () => {
     await expect(themeColor(page)).toHaveAttribute("content", colors.lightBg);
   });
 
-  test("ライトでは bg、ボタンでダークにするとダークの bg になり、ノートを移ってもそのまま", async ({
+  test("ライトでは bg、枠でダークを選ぶとダークの bg になり、ノートを移ってもそのまま", async ({
     context,
     baseURL,
     page,
@@ -108,8 +112,9 @@ test.describe("時刻や電池の部分の色", () => {
     await expect(themeColor(page)).toHaveCount(1);
     await expect(themeColor(page)).toHaveAttribute("content", colors.lightBg);
 
-    await clickWhenHydrated(toggle(page, "ダークにする"));
+    await chooseTheme(page, "ダーク");
     await expect(themeColor(page)).toHaveAttribute("content", colors.darkBg);
+    await page.keyboard.press("Escape");
 
     await waitForHydration(page.locator(".note-body"));
     await page.getByRole("article").getByRole("link", { name: "Docker のメモ" }).click();
@@ -117,7 +122,7 @@ test.describe("時刻や電池の部分の色", () => {
     await expect(themeColor(page)).toHaveCount(1);
     await expect(themeColor(page)).toHaveAttribute("content", colors.darkBg);
 
-    await clickWhenHydrated(toggle(page, "ライトにする"));
+    await chooseTheme(page, "ライト");
     await expect(themeColor(page)).toHaveAttribute("content", colors.lightBg);
   });
 });

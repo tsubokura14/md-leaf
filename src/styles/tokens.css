@@ -103,7 +103,7 @@
   --c-on-accent: #ffffff;
 }
 
-.dark {
+[data-theme="dark"] {
   color-scheme: dark;
   --c-bg: #1d1c19;
   --c-surface: #272520;

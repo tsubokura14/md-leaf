@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import { currentReadingSize, READING_SIZES, setReadingSize } from "@/components/reading-size";
+import { usePopover } from "@/components/use-popover";
 
 // 上の帯の「Aa」と、本文の文字の大きさを選ぶ枠。
 // - 「Aa」は、本文があるとき（ページに隠されていない .reading があるとき）だけ、CSS の reading の変形（src/app/globals.css）で出す。
@@ -21,24 +22,8 @@ export function FontSizeMenu() {
   const panelId = useId();
   const headingId = useId();
 
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (!root.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-        button.current?.focus();
-      }
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
+  const close = useCallback(() => setOpen(false), []);
+  usePopover(open, close, root, button);
 
   const toggle = () => {
     // 枠は押したあとにしか開かないので、開くときに今の大きさを読む
