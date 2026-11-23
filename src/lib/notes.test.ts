@@ -280,9 +280,9 @@ describe("ノートの中のリンク", () => {
     const note = await readNote(["開発", "Docker のメモ"], dir);
 
     expect(home?.html).toContain(
-      `href="/notes/${encodeURIComponent("開発")}/${encodeURIComponent("Docker のメモ")}" data-note-link=""`,
+      `href="/notes/${encodeURIComponent("開発")}/${encodeURIComponent("Docker のメモ")}" data-internal-link=""`,
     );
-    expect(note?.html).toContain('href="/" data-note-link=""');
+    expect(note?.html).toContain('href="/" data-internal-link=""');
   });
 
   test("リンク先がないリンクがあれば、リンクを書いたノートとリンク先を警告に出す", async () => {
