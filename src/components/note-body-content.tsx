@@ -9,8 +9,8 @@ type NoteBodyContentProps = {
 };
 
 // 本文は src/lib/markdown.ts が作った HTML の文字列なので、リンクを next/link にできない。
-// そこで本文のクリックを1か所で受け、ノートへのリンク（data-note-link。markdown.ts が、ノートの URL に
-// 書き換えたリンクにだけ付ける）なら router.push で、ページを読み込み直さずに移る。
+// そこで本文のクリックを1か所で受け、ノートへのリンク（data-internal-link。kinari-md が、markdown.ts の渡す関数で
+// ノートの URL に書き換えたリンクにだけ付ける）なら router.push で、ページを読み込み直さずに移る。
 // href は markdown.ts が作った「/」か「/notes/...」だけなので、router.push に渡してよい（javascript: などは来ない）。
 // 新しいタブで開く（Ctrl・⌘・Shift・Alt 付き、中ボタン）や、ほかで止めたクリック（defaultPrevented）は、
 // ブラウザに任せる。React がつながる前に押したときも、ふつうのリンクとして移る
@@ -38,7 +38,7 @@ function keepNaturalWidth(svg: SVGSVGElement) {
   svg.style.removeProperty("max-width");
 }
 
-// 本文の中の pre[data-mermaid]（src/lib/highlight.ts が付ける）を、1つずつ図に替える。
+// 本文の中の pre[data-mermaid]（kinari-md の変換が付ける）を、1つずつ図に替える。
 // 描き終わるまでと、描けなかったときは pre（元のコード）を残す。
 // 図（.mermaid-figure）には元のコードを data-mermaid-source に残し、ライト・ダークが変わったら、それから描き直す
 // （renderMermaid は描くたびにトークンから色を読むので、描き直せば今の色になる）。
@@ -96,7 +96,10 @@ export function NoteBodyContent({ html }: NoteBodyContentProps) {
       dark = isDark();
       draw();
     });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
     return () => {
       observer.disconnect();
       run += 1;
@@ -106,7 +109,7 @@ export function NoteBodyContent({ html }: NoteBodyContentProps) {
   function handleClick(event: MouseEvent<HTMLDivElement>) {
     if (!isPlainLeftClick(event)) return;
     if (!(event.target instanceof Element)) return;
-    const link = event.target.closest("a[data-note-link]");
+    const link = event.target.closest("a[data-internal-link]");
     if (!(link instanceof HTMLAnchorElement) || !event.currentTarget.contains(link)) return;
     const href = link.getAttribute("href");
     if (!href) return;

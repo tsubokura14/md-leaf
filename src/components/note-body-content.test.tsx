@@ -74,8 +74,8 @@ describe("NoteBodyContent のリンク", () => {
   });
 
   test("印のないリンクは、ブラウザに任せる", () => {
-    render(<NoteBodyContent html={'<p><a href="https://example.com">外</a></p>'} />);
-    const notPrevented = fireEvent.click(screen.getByRole("link", { name: "外" }));
+    render(<NoteBodyContent html={'<p><a href="#節">節</a></p>'} />);
+    const notPrevented = fireEvent.click(screen.getByRole("link", { name: "節" }));
     expect(notPrevented).toBe(true);
     expect(push).not.toHaveBeenCalled();
   });
