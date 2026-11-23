@@ -30,7 +30,7 @@ async function openToc(page: Page) {
 
 // 本文の見出し（目次にも同じ名前のボタンがあるので、本文に絞る）
 function bodyHeading(page: Page, name: string) {
-  return page.locator(".note-body").getByRole("heading", { name, exact: true });
+  return page.locator(".kinari-body").getByRole("heading", { name, exact: true });
 }
 
 // 見出しが上の帯に隠れず、上の帯のすぐ下にある
@@ -57,8 +57,8 @@ function notReloaded(page: Page) {
 
 // 本文の Mermaid の図。ブラウザで描くので、撮る前にこれで描き終わるのを待つ
 async function waitForDiagram(page: Page) {
-  await expect(page.locator(".note-body .mermaid-figure svg")).toBeVisible();
-  await expect(page.locator(".note-body pre[data-mermaid]")).toHaveCount(0);
+  await expect(page.locator(".kinari-body .mermaid-figure svg")).toBeVisible();
+  await expect(page.locator(".kinari-body pre[data-mermaid]")).toHaveCount(0);
 }
 
 test.beforeEach(async ({ context, baseURL }) => {
@@ -109,7 +109,7 @@ test.describe("スマホの目次", () => {
 
   test("目次で移ったあとの「戻る」は、目次で移る前のページへ戻る", async ({ page }) => {
     await page.goto("/");
-    await waitForHydration(page.locator(".note-body"));
+    await waitForHydration(page.locator(".kinari-body"));
     await page.getByRole("article").getByRole("link", { name: "Git ブランチの運用メモ" }).click();
     await expect(
       page.getByRole("heading", { level: 1, name: "Git ブランチの運用メモ" }),

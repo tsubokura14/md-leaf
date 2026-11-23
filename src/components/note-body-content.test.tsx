@@ -1,7 +1,7 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { drawMermaid } from "kinari-md/mermaid";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { NoteBodyContent } from "./note-body-content";
-import { renderMermaid } from "./mermaid";
 
 const push = vi.hoisted(() => vi.fn());
 
@@ -9,58 +9,42 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
 }));
 
-// 本物の mermaid はブラウザの描画（文字の大きさを測るなど）が要り、jsdom では描けない。描く処理を差し替える
-vi.mock("./mermaid", () => ({
-  renderMermaid: vi.fn(),
+// 図を描く・描き直す処理は kinari-md が持ち、kinari-md がテストする。ここではつなぎ方だけを確かめる
+vi.mock("kinari-md/mermaid", () => ({
+  drawMermaid: vi.fn(),
 }));
 
-const mockedRender = vi.mocked(renderMermaid);
-
-const diagramHtml =
-  '<p>前</p><pre data-mermaid=""><code class="language-mermaid">flowchart LR\n  A --&gt; B\n</code></pre>';
-
-function sourceCode() {
-  return screen.queryByText(/flowchart LR/);
-}
+const mockedDraw = vi.mocked(drawMermaid);
 
 afterEach(() => {
-  mockedRender.mockReset();
+  mockedDraw.mockReset();
   push.mockReset();
 });
 
-describe("NoteBodyContent の Mermaid", () => {
-  test("描き終わるまでのあいだは、元のコードを出しておく", async () => {
-    mockedRender.mockReturnValue(new Promise(() => {}));
-    const { container } = render(<NoteBodyContent html={diagramHtml} />);
-    await waitFor(() =>
-      expect(mockedRender).toHaveBeenCalledWith(expect.any(String), "flowchart LR\n  A --> B\n"),
-    );
-    expect(sourceCode()).toBeInTheDocument();
-    expect(container.querySelector(".mermaid-figure")).toBeNull();
+describe("NoteBodyContent の本文と図", () => {
+  test("本文は kinari-md の入れ物（.kinari-body）に入れる", () => {
+    mockedDraw.mockReturnValue(() => {});
+    const { container } = render(<NoteBodyContent html="<p>本文だけ</p>" />);
+    expect(container.querySelector(".kinari-body p")).toHaveTextContent("本文だけ");
   });
 
-  test("描けたら、元のコードを図に替える", async () => {
-    mockedRender.mockResolvedValue('<svg aria-label="図"></svg>');
-    const { container } = render(<NoteBodyContent html={diagramHtml} />);
-    await waitFor(() => expect(container.querySelector(".mermaid-figure svg")).not.toBeNull());
-    expect(sourceCode()).toBeNull();
+  test("図は kinari-md の drawMermaid に本文の入れ物を渡して描き、外すときに描き直しをやめる", () => {
+    const stop = vi.fn();
+    mockedDraw.mockReturnValue(stop);
+    const { container, unmount } = render(<NoteBodyContent html="<p>本文</p>" />);
+    expect(mockedDraw).toHaveBeenCalledWith(container.querySelector(".kinari-body"));
+    expect(stop).not.toHaveBeenCalled();
+    unmount();
+    expect(stop).toHaveBeenCalledTimes(1);
   });
 
-  test("描けなかったら（書き方が間違っている）、元のコードをそのまま出す", async () => {
-    mockedRender.mockRejectedValue(new Error("Parse error"));
-    const { container } = render(<NoteBodyContent html={diagramHtml} />);
-    await waitFor(() => expect(mockedRender).toHaveBeenCalled());
-    // 失敗の後始末まで進ませる
-    await Promise.resolve();
-    expect(sourceCode()).toBeInTheDocument();
-    expect(container.querySelector("pre[data-mermaid]")).not.toBeNull();
-    expect(container.querySelector(".mermaid-figure")).toBeNull();
-  });
-
-  test("図のないノートでは、描く処理を呼ばない", async () => {
-    render(<NoteBodyContent html="<p>本文だけ</p>" />);
-    await Promise.resolve();
-    expect(mockedRender).not.toHaveBeenCalled();
+  test("本文が変わったら、前の描き直しをやめてから描き直す", () => {
+    const stop = vi.fn();
+    mockedDraw.mockReturnValue(stop);
+    const { rerender } = render(<NoteBodyContent html="<p>前</p>" />);
+    rerender(<NoteBodyContent html="<p>後</p>" />);
+    expect(stop).toHaveBeenCalledTimes(1);
+    expect(mockedDraw).toHaveBeenCalledTimes(2);
   });
 });
 
