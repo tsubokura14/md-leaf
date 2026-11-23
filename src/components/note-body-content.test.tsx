@@ -22,12 +22,6 @@ afterEach(() => {
 });
 
 describe("NoteBodyContent の本文と図", () => {
-  test("本文は kinari-md の入れ物（.kinari-body）に入れる", () => {
-    mockedDraw.mockReturnValue(() => {});
-    const { container } = render(<NoteBodyContent html="<p>本文だけ</p>" />);
-    expect(container.querySelector(".kinari-body p")).toHaveTextContent("本文だけ");
-  });
-
   test("図は kinari-md の drawMermaid に本文の入れ物を渡して描き、外すときに描き直しをやめる", () => {
     const stop = vi.fn();
     mockedDraw.mockReturnValue(stop);

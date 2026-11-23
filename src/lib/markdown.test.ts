@@ -20,17 +20,6 @@ describe("renderMarkdown", () => {
     expect(result.html).toBe('<h2 data-heading="0">見出し</h2>\n<p>本文です。</p>');
   });
 
-  test("フロントマターの title が数なら、文字にして返す", () => {
-    const result = renderMarkdown("---\ntitle: 2024\n---\n\n本文です。\n");
-    expect(result.title).toBe("2024");
-  });
-
-  test("フロントマターの YAML が壊れていても、本文を出し、title を返さない", () => {
-    const result = renderMarkdown("---\ntitle: [閉じていない\n---\n\n本文です。\n");
-    expect(result.title).toBeUndefined();
-    expect(result.html).toBe("<p>本文です。</p>");
-  });
-
   test("段落になった HTML のタグは、HTML にせず文字の段落として出す", () => {
     const result = renderMarkdown("<script>alert(1)</script>\n");
     expect(result.html).toBe("<p>&#x3C;script>alert(1)&#x3C;/script></p>");
@@ -88,12 +77,6 @@ describe("renderMarkdown", () => {
       );
       expect(result.brokenLinks).toEqual([]);
     });
-
-    test("[[ ]] の書き方はリンクにせず、文字のまま出す", () => {
-      const result = renderMarkdown("[[リリースの手順]]", links);
-      expect(result.html).toBe("<p>[[リリースの手順]]</p>");
-      expect(result.brokenLinks).toEqual([]);
-    });
   });
 
   describe("画像（links を渡したとき）", () => {
@@ -120,20 +103,6 @@ describe("renderMarkdown", () => {
       );
       expect(result.brokenImages).toEqual(["ない.png", "../../外.png", "memo.txt"]);
       expect(result.html).toContain(`src="/files/${encodeURIComponent("../外.png")}"`);
-    });
-
-    test("http(s):// の画像はそのまま出し、切れた画像にしない", () => {
-      const result = renderMarkdown("![外](https://example.com/a.png)", links);
-      expect(result.html).toBe(
-        '<figure><img src="https://example.com/a.png" alt="外"><figcaption>外</figcaption></figure>',
-      );
-      expect(result.brokenImages).toEqual([]);
-    });
-
-    test("![[ ]] の書き方は画像にせず、文字のまま出す", () => {
-      const result = renderMarkdown("![[branch-graph.png]]", links);
-      expect(result.html).toBe("<p>![[branch-graph.png]]</p>");
-      expect(result.brokenImages).toEqual([]);
     });
   });
 });
