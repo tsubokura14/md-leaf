@@ -20,10 +20,10 @@ const eslintConfig = defineConfig([
       "better-tailwindcss": { entryPoint: "src/app/globals.css" },
     },
     rules: {
-      // Tailwind のクラスではなく CSS に書いたクラス（tokens.css の .reading、src/components/note-body.css・toc.css）
+      // Tailwind のクラスではなく CSS に書いたクラス（tokens.css の .reading、kinari-md の body.css の .kinari-body、src/components/toc.css）
       "better-tailwindcss/no-unknown-classes": [
         "error",
-        { ignore: ["^reading$", "^note-body$", "^toc-sheet$", "^toc-side$"] },
+        { ignore: ["^reading$", "^kinari-body$", "^toc-sheet$", "^toc-side$"] },
       ],
       "better-tailwindcss/no-restricted-classes": [
         "error",
