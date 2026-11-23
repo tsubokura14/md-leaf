@@ -10,6 +10,7 @@ Markdown の中の数式の書き方（`$...$`・`$$...$$`）を読み、mdast �
 
 ## このプロジェクトで使っている部分
 
-- `src/lib/markdown.ts` で、`remark-gfm` のあとに `.use(remarkMath)` で足す（オプションは既定のまま）
+- 保管庫の検査（`scripts/check-content.mjs`）で、`remark-frontmatter` のあとに `.use(remarkMath)` で足す（オプションは既定のまま）
+  - 数式の中の `[[` を `[[ ]]` の書き方と見間違えないよう、`inlineMath`・`math` の節の範囲を伏せてから探す
   - 既定では `$` 1つで囲んだものも文の中の数式になる。`$` が1つだけ（「100$」）なら数式にならない
-- remark-rehype が、文の中の数式を `code.math-inline`、段落の外の `$$...$$` を `pre > code.math-display` にする。これを `src/lib/math.ts` が KaTeX で式にする（`docs/libraries/katex.md`）
+- 表示の数式（KaTeX で描く）は kinari-md の中で行う（`docs/libraries/kinari-md.md`）

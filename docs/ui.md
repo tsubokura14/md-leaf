@@ -15,6 +15,7 @@
 - トークンファイル：`src/styles/tokens.css`（`src/app/globals.css` から読み込む）
 - コードでもプロトタイプでも、トークンにない値（`p-[13px]`、`#3366ff` など）を使わない。`npm run lint` で見つかる
 - 色はライトとダークで2組あり、同じトークン名で切り替わる。画面のコードでライト・ダークを分けて書かない
+- Markdown の本文だけが使う値（abstract・important・caution・code-keyword・code-string・code-comment の色と、table-col-m・table-col-l の幅）は、kinari-md のトークン（`kinari-md/tokens.css`。`src/app/globals.css` が md-leaf のトークンのあとに読む）にあり、md-leaf のトークンファイルには書かない。ライト・ダークの切り替えは md-leaf のトークンと同じ
 
 ## 雰囲気
 
@@ -32,8 +33,8 @@
 | border | 区切り線、見出しの下線、枠 |
 | accent | リンク、今開いているノート（一覧での強調）、主なボタン、アプリの印（若葉のアイコン）。1画面の主なボタンは1つだけ |
 | on-accent | accent の上の文字 |
-| info・success・warning・danger・abstract・important・caution | コールアウトの種類ごとの色（7色）。info は note の、success は tip の色。左の太線と見出しの文字に使い、地はその色を薄くしたもの。danger はエラーの帯にも使う。info・success・warning・danger はシリーズで共通の意味の名前（kinari-md） |
-| code-keyword・code-string・code-comment | コードのハイライト |
+| info・success・warning・danger・abstract・important・caution | コールアウトの種類ごとの色（7色）。info は note の、success は tip の色。左の太線と見出しの文字に使い、地はその色を薄くしたもの。danger はエラーの帯にも使う。info・success・warning・danger はシリーズで共通の意味の名前で md-leaf のトークン、abstract・important・caution は kinari-md のトークン |
+| code-keyword・code-string・code-comment | コードのハイライト（kinari-md のトークン） |
 | overlay | 一覧・目次を開いたときの、うしろを暗くする幕 |
 
 ## 余白と並べ方

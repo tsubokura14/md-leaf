@@ -14,10 +14,10 @@
 | `src/app/(reader)/data.ts` | `src/lib/notes.ts` を `"use cache"` の関数で包み、ビルドのときに読む。ページはここを呼ぶ。`"use cache"` などの Next.js の書き方は `src/lib/` に持ち込まず、ここに置く |
 | `src/app/files/` | ノートの画像を返す入口（Route Handler）。上の帯と一覧が要らないので `(reader)` の外に置く（「画像を返す入口は、コンテンツフォルダの中の画像だけを返す」） |
 | `src/components/` | 画面の部品（複数の画面で使うもの） |
-| `src/lib/` | 画面に関係しない処理（ノートの読み込み、Markdown から HTML への変換など）。React に依存しない |
+| `src/lib/` | 画面に関係しない処理（ノートの読み込み、Markdown から HTML への変換の入口など）。React に依存しない。Markdown の変換そのものは kinari-md（`src/lib/markdown.ts` が `renderMarkdown` を呼ぶ）で、相対のリンクと画像の行き先だけを md-leaf が決める（`note-links.ts`・`note-images.ts`） |
 | `src/styles/tokens.css` | トークンファイル。色・文字・余白などの値はここにだけ書く |
-| `src/app/globals.css` | Tailwind とトークンの読み込みと、`dark` の変形の定義（`<html>` の `data-theme="dark"` に合わせる。`src/components/theme.ts`）、`theme-system`・`theme-light`・`theme-dark` の変形の定義（`<html>` の `data-theme-choice` に合わせる。上の帯のテーマのボタンのアイコン。`src/components/theme-menu.tsx`）、`reading` の変形の定義（本文の `.reading` があるページだけ。`src/components/font-size-menu.tsx`）、`toc` の変形の定義（見出しのある本文のページだけ。`src/components/toc.tsx`）だけ。値は書かない |
-| `src/components/note-body.css` | ノートの本文（Markdown から作った HTML）の見た目。HTML にクラスを付けられないので、`.note-body` の下の要素の選び方で書き、値はトークンの `var()` だけを使う |
+| `src/app/globals.css` | Tailwind とトークンの読み込み（md-leaf の `tokens.css` のあとに `kinari-md/tokens.css`）と、kinari-md の中を Tailwind に探させる `@source`（「トークンにない値を書かない」）と、`dark` の変形の定義（`<html>` の `data-theme="dark"` に合わせる。`src/components/theme.ts`）、`theme-system`・`theme-light`・`theme-dark` の変形の定義（`<html>` の `data-theme-choice` に合わせる。上の帯のテーマのボタンのアイコン。`src/components/theme-menu.tsx`）、`reading` の変形の定義（本文の `.reading` があるページだけ。`src/components/font-size-menu.tsx`）、`toc` の変形の定義（見出しのある本文のページだけ。`src/components/toc.tsx`）だけ。値は書かない |
+| `src/components/note-body.css` | ノートの本文（Markdown から作った HTML）の見た目のうち、md-leaf の画面の決まりだけ（見出しの `scroll-margin-top`）。本文の見た目そのものは kinari-md の `body.css`（入れ物 `.kinari-body`。`src/components/note-body.tsx` が読む）で、md-leaf では上書きしない。値はトークンの `var()` だけを使う |
 | `src/components/toc.css` | 目次の高さなど、Tailwind のトークンのクラスだけでは書けない値（画面の高さからの引き算）。値はトークンの `var()` だけを使う |
 | `content/` | Vercel のビルドで保管庫から取ってくるノートの置き場所（リポジトリには入れない。`.gitignore`）。この中の構成がそのままノートの一覧になる |
 | `*.test.ts(x)`・`*.test.mjs` | 単体・部品のテスト（Vitest）。テストするファイルの隣に置く（`src/`・`scripts/`・`.claude/hooks/`）。`src/` の `.tsx` は jsdom、それ以外は Node で動く |
@@ -37,7 +37,8 @@
 ### トークンにない値を書かない
 - 理由：見た目の値を `src/styles/tokens.css` の1か所にまとめ、ライト・ダークを同じトークン名で切り替えるため（`docs/ui.md` の「トークン」）
 - 前提（崩れたら見直す）：Tailwind の既定の値を `--*: initial` で消してある。これを外すと、トークンにないクラスも CSS が作られる
-- 当てはまる場所：`src/` のすべての TSX（`npm run lint` の ESLint が、トークンにないクラス、`[` を使う任意の値、色コード・`px` のリテラルを見つける）と、トークンファイル以外の `.css`（`scripts/check-tokens.mjs` が色コード・`rgb()`・`px` を見つける）。CSS に書いたクラス（`.reading`、`.note-body`）は Tailwind のクラスとして見つからないので、`eslint.config.mjs` の `no-unknown-classes` の `ignore` に足す
+- Tailwind は、探す対象のファイルで使っているトークンの変数だけを CSS に出す。kinari-md の `body.css` と図は md-leaf のトークン（`--color-info`・`--color-success` など）を読み、そのうち md-leaf のコードでは使っていないものがある。`node_modules` は探す対象から外れるので、`src/app/globals.css` の `@source "../../node_modules/kinari-md/src"` で kinari-md の中も探させる。理由：探させないと kinari-md だけが使う変数が出ず、コールアウトの色などが消える。探させれば、md-leaf の CSS で kinari-md を上書きせずに済む。前提（崩れたら見直す）：kinari-md の CSS が `node_modules/kinari-md/src` の下にあること（kinari-md の置き方やフォルダが変わったら、`@source` のパスを合わせる）。トークンを `@theme static` にして全部出す作りに変えたら、`@source` は要らない
+- 当てはまる場所：`src/` のすべての TSX（`npm run lint` の ESLint が、トークンにないクラス、`[` を使う任意の値、色コード・`px` のリテラルを見つける）と、トークンファイル以外の `.css`（`scripts/check-tokens.mjs` が色コード・`rgb()`・`px` を見つける）。kinari-md のファイル（`node_modules/kinari-md`）は対象に入らない（パッケージの中の決まりは kinari-md が持つ）。CSS に書いたクラス（`.reading`、`.kinari-body`）は Tailwind のクラスとして見つからないので、`eslint.config.mjs` の `no-unknown-classes` の `ignore` に足す
 - CSS の `var()` を使えない場所（マニフェスト・ホーム画面のアイコンの画像・時刻や電池の部分の色の `<meta name="theme-color">`）の色も、TS に書き写さない。ビルドのときに `next.config.ts` がトークンファイルを読み、`src/lib/token-colors.ts` で取り出した色を環境変数 `APP_COLORS`（JSON）として埋め込む。使う側は `readAppColors()` で読む（theme-color は `src/components/theme.ts` の `themeScript` が、ライト・ダークの bg を `<head>` のスクリプトに渡す）。トークンファイルの書き方を変えて色が見つからなくなったら、ビルドが止まる（違う色のまま出さないため）
 
 ### 画面の画像は、Playwright 公式の Docker イメージで撮って比べる
@@ -81,16 +82,16 @@
 - 当てはまる場所：`src/proxy.ts`、`next.config.ts` の `env`、`src/lib/note-url.ts`、`src/lib/notes.ts` の `readNote`・`listNotePaths`
 
 ### 画像を返す入口は、コンテンツフォルダの中の画像だけを返す
-- ノートの画像は、ノートの HTML に入れず、`/files/<コンテンツフォルダからのパス>` の URL で返す（`src/app/files/[...path]/route.ts`）。本文の画像の相対パスは、変換のときにこの URL に書き換える。対象の拡張子と Content-Type、URL の形は `src/lib/note-files.ts` の1か所に置き、変換と入口の両方が使う
+- ノートの画像は、ノートの HTML に入れず、`/files/<コンテンツフォルダからのパス>` の URL で返す（`src/app/files/[...path]/route.ts`）。本文の画像の相対パスは、変換のときにこの URL に書き換える（`src/lib/markdown.ts` が kinari-md の `renderMarkdown` に渡す `resolve`）。対象の拡張子と Content-Type、URL の形は `src/lib/note-files.ts` の1か所に置き、変換と入口の両方が使う
 - 返すのは、ノートの一覧と同じく読み込んだときに集めた、対象の拡張子（png・jpg・jpeg・gif・webp・svg）のファイルだけ。URL からファイルのパスを組み立てない。名前が「.」で始まるファイル・フォルダは集めないので返さない
 - 理由：ファイルを返す入口は、作りを間違えると、コンテンツフォルダの外やノート以外のファイル（`.env` など）を読ませる穴になる。集めた一覧の中だけを探せば、`..` などを書かれても外は読めない。svg は直接開くとスクリプトが動きうるので、`Content-Security-Policy: sandbox` を付けて返す
 - 前提（崩れたら見直す）：ログインの確かめは `src/proxy.ts` に任せている。`matcher` から `/files/` を外すと、ログインしていなくても画像が見える。画像の種類を足すときは `src/lib/note-files.ts` だけを直す。ノートを置く場所を変えたら、`outputFileTracingIncludes` も合わせる（「`content/` をサーバーの出力に入れる」）
-- 当てはまる場所：`src/app/files/[...path]/route.ts`、`src/lib/notes.ts` の `readContentFile`、`src/lib/note-files.ts`、`src/lib/note-images.ts`、`src/proxy.ts` の `matcher`
+- 当てはまる場所：`src/app/files/[...path]/route.ts`、`src/lib/notes.ts` の `readContentFile`、`src/lib/note-files.ts`、`src/lib/note-images.ts`、`src/lib/markdown.ts`、`src/proxy.ts` の `matcher`
 
 ### 保管庫には決まりに合うものだけを置く
 - コンテンツフォルダは保管庫の `notes/` の中。`notes/` の外は読まず、検査もしない。一番上には `index.md` と分類のフォルダ（資格・実践・基礎・スポット）だけを置く。資格・実践・基礎の直下は教材のフォルダ、スポットの直下はテーマのフォルダ（中は自由）。分類の名前と順は `src/lib/note-categories.json` の1か所に置き、ノートの一覧（`src/lib/notes.ts` が一番上をこの順に並べ、分類にない名前は後ろに出す）と検査が読む。理由：`.mjs` の検査は `.ts` を読めないので両方が読める JSON にし、書き写して「検査に通るのに並ばない」ずれが起きないようにする
 - 置いてよいのは、ノート（`.md`）と、アプリが表示できる画像（`src/lib/note-files.ts` と同じ種類）だけ。名前が「.」で始まるもの（`.obsidian/`・`.github/`・`.gitignore`・`.claude/` など）は、どの階層でも検査で飛ばし（中も見ない）、合わないものにしない。名前と並び・書き方の決まりは `docs/content-rules.md`
 - `scripts/check-content.mjs` がコンテンツフォルダを検査する。ビルドの最初に `scripts/prepare-content.mjs` が流し（「ノートはビルドの最初に保管庫から取ってくる」）、合わないものがあればビルドを失敗にする。手元では `npm run check:content -- <保管庫のフォルダ>`（引数がなければ `CONTENT_DIR`、それもなければ `content/`）。`npm run lint` では流さない（アプリのリポジトリに `content/` がないため）
 - 理由：アプリは対象外のファイルを読まないので、置いても表示されず、教材を作るときの作業ファイルが紛れ込むだけになる。「.」で始まるものはアプリがもともと読まず、保管庫には Obsidian・Git・作業の設定（`.obsidian/` など）が要るので飛ばす。リンク切れは `next build` では警告だけで止まらないので、検査で止める。検査をビルドの中で流すので、検査とアプリの版がいつも一致する
-- 前提（崩れたら見直す）：検査はアプリの読み方（`src/lib/notes.ts` が「.」で始まるものを飛ばす、`src/lib/note-files.ts` の画像の種類）を `.mjs` に書き写している。これらを変えたら、検査も合わせる。`e2e/fixtures/` のテスト用のフォルダは検査しない（画面のテストは `npx next build` を直接呼ぶ）
-- 当てはまる場所：保管庫、`src/lib/note-categories.json`、`scripts/check-content.mjs`、`scripts/prepare-content.mjs`、`package.json` の `build`・`check:content`、`src/lib/notes.ts`・`note-files.ts`・`note-links.ts`・`note-images.ts`
+- 前提（崩れたら見直す）：検査はアプリの読み方（`src/lib/notes.ts` が「.」で始まるものを飛ばす、`src/lib/note-files.ts` の画像の種類）を `.mjs` に書き写している。これらを変えたら、検査も合わせる。リンクと画像の行き先の決め方（`src/lib/note-links.ts`・`note-images.ts`）も検査が書き写しているので、Markdown の変換を kinari-md に任せても、この決め方は md-leaf に置き、`src/lib/markdown.ts` から kinari-md の `resolve` に渡す（ノートの URL とコンテンツフォルダの決まりは md-leaf のもので、kinari-md は知らない）。`e2e/fixtures/` のテスト用のフォルダは検査しない（画面のテストは `npx next build` を直接呼ぶ）
+- 当てはまる場所：保管庫、`src/lib/note-categories.json`、`scripts/check-content.mjs`、`scripts/prepare-content.mjs`、`package.json` の `build`・`check:content`、`src/lib/notes.ts`・`note-files.ts`・`note-links.ts`・`note-images.ts`・`markdown.ts`
