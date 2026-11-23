@@ -137,6 +137,8 @@
 - kinari-md の版はタグで固定する（`#v0.1.1`）。理由：README の入れ方のとおり。npm には出していない
 - 外す依存は「`src/` と `scripts/` で直接読まなくなったもの」だけにした。理由：保管庫の検査（`scripts/check-content.mjs`）が unified・remark・yaml を直接読んでおり、仕様の「やらないこと」で検査は md-leaf に残す。比べた案：全部外して kinari-md から引き込まれるものに頼る（npm の置き方しだいで読めなくなるので選ばない）
 - 変換のテストは、md-leaf が持つもの（リンクと画像の決め方、`resolve` のつなぎ方、題の扱い、HTML のタグが文字になること1件）だけを残し、コールアウト・表・数式・コード・見出しの一覧のテストは消す。理由：同じテストを kinari-md と2か所に持たない。見た目は画像を比べるテストが基準の画像のまま通ることで確かめる
+- Vitest の `server.deps.inline` は足さない。理由：足さずに `npm test` で kinari-md（TS のまま）を読めた（Vitest は `node_modules` の中でも `.ts` のファイルは外に出さずに変換する）
+- `next.config.ts` が `notes.ts` 経由で kinari-md を読むままにし、ファイルは分けない。理由：`next typegen`（`npm run typecheck`）と `next build`（`CONTENT_DIR=e2e/fixtures/content`）で設定を読めた
 - `kinari-md/tokens.css` は `globals.css` で、`kinari-md/body.css` は `note-body.tsx` で読む。理由：トークンは `:root` の変数で、ほかのトークンと同じ場所にそろえる。本文の CSS（KaTeX を含む）は、今の KaTeX の CSS と同じく本文の部品が読む
 
 ## 確かめ方
