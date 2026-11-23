@@ -160,4 +160,4 @@
 
 - [x] 変換を kinari-md に替える：`markdown.ts` が kinari-md の `renderMarkdown` に `resolve` を渡す入口になり、消すファイル（callouts・tables・math・highlight・headings）を消し、本文のリンクの印が `data-internal-link` になって、`npm test`・`npm run typecheck` が通ったら完了（本文の CSS はまだ `.note-body` のまま。HTML は今と同じなので見た目は変わらない）
 - [x] 本文の見た目と図を kinari-md に替える：本文が `.kinari-body` と kinari-md の CSS・トークンで出て、図が `drawMermaid` で描かれ、md-leaf のトークンから Markdown だけの値が消え、画像を比べるテストが基準の画像（`docs/specs/screens/` のすべて。撮り直さない）のまま通ったら完了
-- [ ] 依存と文書を整える：直接使わなくなるパッケージを `package.json` から外し、`docs/libraries/kinari-md.md` を書き、`docs/design.md`・`docs/overview.md`・`docs/ui.md`・`docs/specs/notes.md`・`CLAUDE.project.md`・`docs/libraries/` が今のコードに合ったら完了
+- [x] 依存と文書を整える：直接使わなくなるパッケージを `package.json` から外し、`docs/libraries/kinari-md.md` を書き、`docs/design.md`・`docs/overview.md`・`docs/ui.md`・`docs/specs/notes.md`・`CLAUDE.project.md`・`docs/libraries/` が今のコードに合ったら完了
