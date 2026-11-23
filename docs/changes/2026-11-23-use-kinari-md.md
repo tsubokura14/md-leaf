@@ -52,7 +52,7 @@
 
 - #32（トークンの名前をシリーズで揃える）：main に入った
 - #33（`<html>` の `data-theme` でライト・ダークを決める）：main に入った
-- tsubokura14/kinari-md#7（本文の見出しと小さめの字の倍率を、移す前の md-leaf に合わせる）：まだ。直した版（v0.1.1 の予定）のタグが出てから作る。md-leaf が入れる版は、そのタグにする
+- tsubokura14/kinari-md#7（本文の見出しと小さめの字の倍率を、移す前の md-leaf に合わせる）：閉じた。直した版 v0.1.1 のタグが出た（h2 1.41em・h3 1.18em・小さめの字 0.82em）。md-leaf はこの版を入れる（このブランチで `npm install github:tsubokura14/kinari-md#v0.1.1` 済み。`package.json`・`package-lock.json` だけで、まだどこからも使っていない）
 
 ## 決まっていないこと
 
@@ -74,7 +74,7 @@
 | 費用 | なし | AI |
 | 個人情報 | なし | AI |
 | デプロイの環境 | 変えない（`npm install` が GitHub のタグから kinari-md を取る） | AI |
-| 新しいライブラリ | kinari-md（`github:tsubokura14/kinari-md#v<版>`。npm には出していない。TypeScript のまま配るので `next.config.ts` の `transpilePackages` でビルドする）。直接使わなくなる unified・remark・rehype・highlight.js・KaTeX・yaml・mermaid は md-leaf の依存から外す（kinari-md が持つ） | 人（Issue）・AI |
+| 新しいライブラリ | kinari-md（`github:tsubokura14/kinari-md#v0.1.1`。npm には出していない。TypeScript のまま配るので `next.config.ts` の `transpilePackages` でビルドする）。直接使わなくなる unified・remark・rehype・highlight.js・KaTeX・yaml・mermaid は md-leaf の依存から外す（kinari-md が持つ） | 人（Issue）・AI |
 | 取り消せない操作 | なし | AI |
 | 共通の部品・トークン | Markdown だけが使う色（コードの色分け・コールアウトの abstract・important・caution）と表の列の幅は、md-leaf のトークンファイルから外し、kinari-md の `tokens.css` に任せる（値は同じ）。本文の入れ物のクラスは `.note-body` から `.kinari-body` に | AI |
 | `docs/design.md` の決まり | 「全体の構成」の `src/lib/`（Markdown の変換）・`note-body.css` の行、「画像を返す入口は…」「保管庫には…」の当てはまる場所を直す。「トークンにない値を書かない」の対象に、kinari-md のファイルは入らない（パッケージの中の決まりは kinari-md が持つ） | AI |
@@ -102,7 +102,7 @@
 - リンクと画像の書き換え（`note-links.ts`・`note-images.ts`）は md-leaf に残し、`renderMarkdown` の `resolve` に渡す1つの関数にまとめる。理由：ノートの URL とコンテンツフォルダの決まりは md-leaf のもの。保管庫の検査（`.mjs`）が同じ決まりを書き写しているので、そちらも今のまま合わせておく
 - Markdown だけが使う色と表の列の幅は、md-leaf のトークンファイルから外す。理由：同じ値を2か所に持たない。値は kinari-md と同じなので、見た目は変わらない
 - 直接使わなくなるパッケージ（unified・remark・rehype・highlight.js・KaTeX・yaml・mermaid）は md-leaf の依存から外す。理由：版を kinari-md の1か所で決める。md-leaf に残すと、版がずれて同じものが2つ入りうる
-- kinari-md の版はタグで固定する（`#v0.1.x`）。理由：README の入れ方のとおり。npm には出していない
+- kinari-md の版はタグで固定する（`#v0.1.1`）。理由：README の入れ方のとおり。npm には出していない
 
 ## 確かめ方
 

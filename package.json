@@ -17,6 +17,7 @@
   "dependencies": {
     "highlight.js": "11.12.0",
     "katex": "0.19.1",
+    "kinari-md": "github:tsubokura14/kinari-md#v0.1.1",
     "mermaid": "12.3.0",
     "next": "16.4.6",
     "next-auth": "5.0.0-beta.32",
